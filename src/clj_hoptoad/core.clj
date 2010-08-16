@@ -1,6 +1,7 @@
 (ns clj-hoptoad.core
   (use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]])
-       (clojure.contrib [string :only [split]] prxml)))
+       (clojure.contrib [string :only [split]] prxml))
+  (require [clj-http.client :as client]))
 
 (use 'clojure.contrib.prxml)
 
@@ -20,6 +21,9 @@
   (vec (cons sub-map-key
              (for [[k,v] (sub-map-key hash-map)]
                [:var {:key k} v]))))
+
+(defn send-notice [notice]
+  (client/post "http://hoptoadapp.com/notifier_api/v2/notices" {:body notice :content-type :xml :accept :xml}))
 
 (defn make-notice [api-key environment-name project-root exception request]
   (binding [*prxml-indent* 2]
