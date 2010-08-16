@@ -14,14 +14,46 @@
   (parse-xml (apply make-notice args)))
 
 (defn backtrace-lines [notice-xml]
-   (map :attrs (xml-> notice-xml :error :backtrace :line zip/node)))
+  (map :attrs (xml-> notice-xml :error :backtrace :line zip/node)))
+
+
+(defn text-in
+  [notice-xml path]
+  (first (apply xml-> notice-xml (conj path text))))
+
+(defn var-elems-at
+  "Extracts key-values (into a map) from XML blocks like:
+    <cgi-data>
+      <var key='SERVER_NAME'>example.org</var>
+      <var key='HTTP_USER_AGENT'>Mozilla</var>
+    </cgi-data>
+"
+  [notice-xml path]
+  (let [pairs (for [var-elem (apply xml-> notice-xml (conj path :var zip/node))]
+                [(get-in var-elem [:attrs :key]) (first (:content var-elem))])]
+    (apply hash-map (flatten pairs))))
 
 (deftest test-make-notice
-  (testing "error section"
-    (let [exception (try (throw (Exception. "Foo")) (catch Exception e e))
-          notice-xml (-> (make-notice-zip exception))]
-      (is (= '("java.lang.Exception") (xml-> notice-xml :error :class text)))
-      (is (= '("java.lang.Exception: Foo") (xml-> notice-xml :error :message text)))
+  (let [exception (try (throw (Exception. "Foo")) (catch Exception e e))
+        request {:url "http://example.com" :component "foo" :action "bar"
+                 :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
+                 :params {"city" "LA", "state" "CA"}
+                 :session {"user-id" "23"}}
+        notice-xml (-> (make-notice-zip "my-api-key" "production" "/testapp" exception request))]
+    (are [expected-text path] (= expected-text (text-in notice-xml path))
+         "my-api-key" [:api-key]
+         "java.lang.Exception" [:error :class]
+         "java.lang.Exception: Foo" [:error :message]
+         "/testapp" [:server-environment :project-root]
+         "production" [:server-environment :environment-name]
+         "http://example.com" [:request :url]
+         "foo" [:request :component]
+         "bar" [:request :action])
+    (are [expected-vars path] (= expected-vars (var-elems-at notice-xml path))
+         (:cgi-data request) [:request :cgi-data]
+         (:params request) [:request :params]
+         (:session request) [:request :session])
+    (testing "backtraces"
       (let [first-line (first (backtrace-lines notice-xml))]
         (is (= "core.clj" (:file first-line)))
         (is (= "clj-hoptoad.test.core/fn[fn]" (:method first-line)))

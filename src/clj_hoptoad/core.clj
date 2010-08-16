@@ -4,7 +4,7 @@
 
 (use 'clojure.contrib.prxml)
 
-(def version "0.1.0")
+(def version "0.1.0") ; Can I get this from project.clj?
 
 (defn- xml-ex-response [exception]
   (let [{:keys [trace-elems]} (parse-exception exception)
@@ -16,30 +16,29 @@
                 (for [{:keys [file line], :as elem} trace-elems]
                   [:line {:file file :number line :method (method-str elem)}])))]))
 
-(defn make-notice [exception]
+(defn- map->xml-vars [hash-map sub-map-key]
+  (vec (cons sub-map-key
+             (for [[k,v] (sub-map-key hash-map)]
+               [:var {:key k} v]))))
+
+(defn make-notice [api-key environment-name project-root exception request]
   (binding [*prxml-indent* 2]
     (with-out-str
       (prxml [:decl! "1.0"]
              [:notice {:version "2.0"}
-              [:api-key "foo"]
+              [:api-key api-key]
               [:notifier
                [:name "clj-hoptoad"]
                [:version version]
                [:url "http://github.com/leadtune/clj-hoptoad"]]
               (xml-ex-response exception)
               [:request
-               [:url "http://example.com"]
-               [:component]
-               [:action]
-               [:cgi-data
-                [:var {:key "SERVER_NAME"} "example.org"]
-                [:var {:key "HTTP_USER_AGENT"} "Mozilla"]]
-               [:params
-                [:var {:key "login"} "jimmy"]
-                [:var {:key "password"} "[FILTERED]"]]
-               [:session
-                [:var {:key "user_id"} "23"]
-                [:var {:key "foo"} "bar"]]]
+               [:url (:url request)] ; required if there is a request
+               [:component (:component request)]
+               [:action (:action request)]
+               (map->xml-vars request :cgi-data)
+               (map->xml-vars request :params)
+               (map->xml-vars request :session)]
               [:server-environment
-               [:project-root "/testapp"]
-               [:environment-name "production"]]]))))
+               [:project-root project-root]
+               [:environment-name environment-name]]]))))
