@@ -1,4 +1,4 @@
-(defproject clj-hoptoad "1.0.0-SNAPSHOT"
+(defproject clj-hoptoad "0.1.0-SNAPSHOT"
   :description "Hoptoad Client"
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
