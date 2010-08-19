@@ -6,22 +6,22 @@
             [clojure.zip :as zip]
             [clojure.xml :as xml]))
 
-(defn parse-xml [xml-str]
+(defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
 
-(defn make-notice-zip [& args]
+(defn- make-notice-zip [& args]
   ;(println (apply make-notice args))
   (parse-xml (apply make-notice args)))
 
-(defn backtrace-lines [notice-xml]
+(defn- backtrace-lines [notice-xml]
   (map :attrs (xml-> notice-xml :error :backtrace :line zip/node)))
 
 
-(defn text-in
+(defn- text-in
   [notice-xml path]
   (first (apply xml-> notice-xml (conj path text))))
 
-(defn var-elems-at
+(defn- var-elems-at
   "Extracts key-values (into a map) from XML blocks like:
     <cgi-data>
       <var key='SERVER_NAME'>example.org</var>
@@ -39,7 +39,7 @@
                  :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
                  :params {"city" "LA", "state" "CA"}
                  :session {"user-id" "23"}}
-        notice-xml (-> (make-notice-zip "my-api-key" "production" "/testapp" exception request))]
+        notice-xml (make-notice-zip "my-api-key" "production" "/testapp" exception request)]
     (are [expected-text path] (= expected-text (text-in notice-xml path))
          "my-api-key" [:api-key]
          "java.lang.Exception" [:error :class]
@@ -57,4 +57,7 @@
       (let [first-line (first (backtrace-lines notice-xml))]
         (is (= "core.clj" (:file first-line)))
         (is (= "clj-hoptoad.test.core/fn[fn]" (:method first-line)))
-        (is (re-matches #"^\d+$" (:number first-line)))))))
+        (is (re-matches #"^\d+$" (:number first-line))))))
+  (testing "when no request is provided"
+    (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
+      (is (empty? (xml-> notice-xml :request))))))
