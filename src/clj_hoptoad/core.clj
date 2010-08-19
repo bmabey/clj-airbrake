@@ -40,6 +40,8 @@
                  [:url "http://github.com/leadtune/clj-hoptoad"]]
                 (xml-ex-response exception)
                 (when request
+                  (when-not (:url request)
+                    (throw (IllegalArgumentException. ":url is required when passing in a request")))
                   [:request
                    [:url (:url request)] ; required if there is a request
                    [:component (:component request)]

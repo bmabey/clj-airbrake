@@ -64,6 +64,10 @@
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
       (is (empty? (xml-> notice-xml :request)))))
 
+  (testing "when a request is provided but no URL"
+    (let [notice-xml-args ["my-api-key" "test" "/testapp" (Exception. "foo") {:action "foo"}]]
+      (is (thrown-with-msg? IllegalArgumentException #"url is required" (apply make-notice notice-xml-args)))))
+
   (testing "when no session, cgi, or params are provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo") {:url "foo" :session nil :params {}})]
       (is (seq (xml-> notice-xml :request)))
