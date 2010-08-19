@@ -1,10 +1,12 @@
 (ns clj-hoptoad.test.core
-  (:use [clj-hoptoad.core] :reload-all)
+  (:use [clj-hoptoad.core] :reload)
   (:use clojure.contrib.zip-filter.xml
-        clojure.test)
+        clojure.test
+        midje.semi-sweet)
   (:require
             [clojure.zip :as zip]
-            [clojure.xml :as xml]))
+            [clojure.xml :as xml]
+            [clj-http.client :as client]))
 
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
@@ -15,7 +17,6 @@
 
 (defn- backtrace-lines [notice-xml]
   (map :attrs (xml-> notice-xml :error :backtrace :line zip/node)))
-
 
 (defn- text-in
   [notice-xml path]
@@ -32,6 +33,7 @@
   (let [pairs (for [var-elem (apply xml-> notice-xml (conj path :var zip/node))]
                 [(get-in var-elem [:attrs :key]) (first (:content var-elem))])]
     (apply hash-map (flatten pairs))))
+
 
 (deftest test-make-notice
   (let [exception (try (throw (Exception. "Foo")) (catch Exception e e))
@@ -61,3 +63,12 @@
   (testing "when no request is provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
       (is (empty? (xml-> notice-xml :request))))))
+
+
+(deftest test-send-notice
+  (expect (send-notice "<notice>...</notice>") => {:error-id 42 :id 100 :url "http://sub.hoptoadapp.com/errors/42/notices/100"}
+          (fake (client/post
+                 "http://hoptoadapp.com/notifier_api/v2/notices" {:body "<notice>...</notice>", :content-type :xml, :accept :xml}) =>
+                 
+                 {:status 200, :headers {"server" "nginx/0.6.35"},
+                  :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">42</error-id>\n  <url>http://sub.hoptoadapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))

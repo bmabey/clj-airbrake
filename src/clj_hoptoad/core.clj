@@ -1,9 +1,10 @@
 (ns clj-hoptoad.core
   (use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]])
        (clojure.contrib [string :only [split]] prxml))
-  (require [clj-http.client :as client]))
-
-(use 'clojure.contrib.prxml)
+  (require [clj-http.client :as client]
+           [clojure.zip :as zip]
+           [clojure.xml :as xml]
+           [clojure.contrib.zip-filter.xml :as zf]))
 
 (def version "0.1.0") ; Can I get this from project.clj?
 
@@ -21,9 +22,6 @@
   (vec (cons sub-map-key
              (for [[k,v] (sub-map-key hash-map)]
                [:var {:key k} v]))))
-
-(defn send-notice [notice]
-  (client/post "http://hoptoadapp.com/notifier_api/v2/notices" {:body notice :content-type :xml :accept :xml}))
 
 (defn make-notice
   ([api-key environment-name project-root exception]
@@ -50,3 +48,18 @@
                 [:server-environment
                  [:project-root project-root]
                  [:environment-name environment-name]]])))))
+
+(defn- parse-xml [xml-str]
+  (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
+
+(defn send-notice [notice]
+  (let [response (client/post "http://hoptoadapp.com/notifier_api/v2/notices"
+                              {:body notice :content-type :xml :accept :xml})
+        body-xml (-> response :body parse-xml)
+        text-at (fn [key] (first (zf/xml-> body-xml key zf/text)))]
+    {:id (Integer. (text-at :id))
+     :error-id (Integer. (text-at :error-id))
+     :url (text-at :url)}))
+
+(defn notify [& args]
+  (send-notice (apply make-notice args)))
