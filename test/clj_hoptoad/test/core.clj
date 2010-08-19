@@ -37,11 +37,11 @@
 
 (deftest test-make-notice
   (let [exception (try (throw (Exception. "Foo")) (catch Exception e e))
-        request {:url "http://example.com" :component "foo" :action "bar"
+        request {:url "http://example.com", :component :foo, :action :bar, ; note the symbols... prxml has issues
                  :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
                  :params {"city" "LA", "state" "CA"}
                  :session {"user-id" "23"}}
-        notice-xml (make-notice-zip "my-api-key" "production" "/testapp" exception request)]
+        notice-xml (make-notice-zip "my-api-key" :production "/testapp" exception request)]
     (are [expected-text path] (= expected-text (text-in notice-xml path))
          "my-api-key" [:api-key]
          "java.lang.Exception" [:error :class]
@@ -63,11 +63,9 @@
   (testing "when no request is provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
       (is (empty? (xml-> notice-xml :request)))))
-
   (testing "when a request is provided but no URL"
     (let [notice-xml-args ["my-api-key" "test" "/testapp" (Exception. "foo") {:action "foo"}]]
       (is (thrown-with-msg? IllegalArgumentException #"url is required" (apply make-notice notice-xml-args)))))
-
   (testing "when no session, cgi, or params are provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo") {:url "foo" :session nil :params {}})]
       (is (seq (xml-> notice-xml :request)))

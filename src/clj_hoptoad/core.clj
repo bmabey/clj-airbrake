@@ -18,12 +18,19 @@
                 (for [{:keys [file line], :as elem} trace-elems]
                   [:line {:file file :number line :method (method-str elem)}])))]))
 
+(defn- keyword-check
+  "prxml barfs with symbols so we need to convert values to strings"
+  [v]
+  (if (keyword? v)
+    (name v)
+    v))
+
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
     (when-not (empty? sub-map)
       (vec (cons sub-map-key
                  (for [[k,v] sub-map]
-                   [:var {:key k} v]))))))
+                   [:var {:key k} (keyword-check v)]))))))
 
 (defn make-notice
   ([api-key environment-name project-root exception]
@@ -43,15 +50,15 @@
                   (when-not (:url request)
                     (throw (IllegalArgumentException. ":url is required when passing in a request")))
                   [:request
-                   [:url (:url request)] ; required if there is a request
-                   [:component (:component request)]
-                   [:action (:action request)]
+                   [:url (keyword-check (:url request))]
+                   [:component (keyword-check (:component request))]
+                   [:action (keyword-check (:action request))]
                    (map->xml-vars request :cgi-data)
                    (map->xml-vars request :params)
                    (map->xml-vars request :session)])
                 [:server-environment
-                 [:project-root project-root]
-                 [:environment-name environment-name]]])))))
+                 [:project-root (keyword-check project-root)]
+                 [:environment-name (keyword-check environment-name)]]])))))
 
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
