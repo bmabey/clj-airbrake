@@ -30,7 +30,7 @@
     (when-not (empty? sub-map)
       (vec (cons sub-map-key
                  (for [[k,v] sub-map]
-                   [:var {:key k} (keyword-check v)]))))))
+                   [:var {:key (keyword-check k)} (keyword-check v)]))))))
 
 (defn make-notice
   ([api-key environment-name project-root exception]
