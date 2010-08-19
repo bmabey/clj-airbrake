@@ -19,9 +19,11 @@
                   [:line {:file file :number line :method (method-str elem)}])))]))
 
 (defn- map->xml-vars [hash-map sub-map-key]
-  (vec (cons sub-map-key
-             (for [[k,v] (sub-map-key hash-map)]
-               [:var {:key k} v]))))
+  (when-let [sub-map (sub-map-key hash-map)]
+    (when-not (empty? sub-map)
+      (vec (cons sub-map-key
+                 (for [[k,v] sub-map]
+                   [:var {:key k} v]))))))
 
 (defn make-notice
   ([api-key environment-name project-root exception]

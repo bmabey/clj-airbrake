@@ -62,7 +62,14 @@
         (is (re-matches #"^\d+$" (:number first-line))))))
   (testing "when no request is provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
-      (is (empty? (xml-> notice-xml :request))))))
+      (is (empty? (xml-> notice-xml :request)))))
+
+  (testing "when no session, cgi, or params are provided"
+    (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo") {:url "foo" :session nil :params {}})]
+      (is (seq (xml-> notice-xml :request)))
+      (is (empty? (xml-> notice-xml :request :session)))
+      (is (empty? (xml-> notice-xml :request :params)))
+      (is (empty? (xml-> notice-xml :request :cgi-data))))))
 
 
 (deftest test-send-notice
