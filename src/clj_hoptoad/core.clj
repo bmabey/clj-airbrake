@@ -23,7 +23,7 @@
   [v]
   (if (keyword? v)
     (name v)
-    v))
+    (str v)))
 
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
