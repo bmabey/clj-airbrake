@@ -53,6 +53,8 @@ Running the tests:
  * Provide mapper function for [Ring][ring] requests.
  * [Ring][ring] middleware to at least serve as an example.
  * Param filtering. (i.e. automatically filter out any 'password' params)
+ * Allow for certain environments to be ignored... defaulting to `#{"test" "development"}`
+ * Configuartion management?  i.e. set api-key once
 
 ## License
 
