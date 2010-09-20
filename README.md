@@ -30,7 +30,7 @@ enviromental variables or anything else that may help in troubleshooting.  Note,
 Leiningen:
 
     :dependencies
-      [[clj-hoptoad "0.1.0"] ...]
+      [[clj-hoptoad "0.1.1"] ...]
 
 Maven:
 
