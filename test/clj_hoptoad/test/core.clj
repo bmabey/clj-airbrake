@@ -40,7 +40,7 @@
         request {:url "http://example.com", :component :foo, :action :bar, ; note the symbols... prxml has issues
                  :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
                  :params {"city" "LA", "state" "CA"}
-                 :session {:user-id "23"}}
+                 :session {:user-id "23", :something-that-needs-escaping "<foo> \"&\"' </foo>"}}
         notice-xml (make-notice-zip "my-api-key" :production "/testapp" exception request)]
     (are [expected-text path] (= expected-text (text-in notice-xml path))
          "my-api-key" [:api-key]
@@ -54,7 +54,7 @@
     (are [expected-vars path] (= expected-vars (var-elems-at notice-xml path))
          (:cgi-data request) [:request :cgi-data]
          (:params request) [:request :params]
-         {"user-id" "23"} [:request :session]) ; notice how the keywords get `name` called on them
+         {"user-id" "23", "something-that-needs-escaping" "&lt;foo&gt; &quot;&amp;&quot;&apos; &lt;/foo&gt;"} [:request :session]) ; notice how the keywords get `name` called on them
     (testing "backtraces"
       (let [first-line (first (backtrace-lines notice-xml))]
         (is (= "core.clj" (:file first-line)))

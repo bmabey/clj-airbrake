@@ -1,6 +1,6 @@
 (ns clj-hoptoad.core
   (use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]])
-       (clojure.contrib [string :only [split]] prxml))
+       (clojure.contrib [string :only [split escape as-str]] prxml))
   (require [clj-http.client :as client]
            [clojure.zip :as zip]
            [clojure.xml :as xml]
@@ -18,19 +18,18 @@
                 (for [{:keys [file line], :as elem} trace-elems]
                   [:line {:file file :number line :method (method-str elem)}])))]))
 
-(defn- keyword-check
-  "prxml barfs with symbols so we need to convert values to strings"
+(defn- sanitize
+  "converts v to a string and escapes html entities"
   [v]
-  (if (keyword? v)
-    (name v)
-    (str v)))
+  (escape {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"} (as-str v)))
+
 
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
     (when-not (empty? sub-map)
       (vec (cons sub-map-key
                  (for [[k,v] sub-map]
-                   [:var {:key (keyword-check k)} (keyword-check v)]))))))
+                   [:var {:key (sanitize k)} (sanitize v)]))))))
 
 (defn make-notice
   ([api-key environment-name project-root exception]
@@ -50,15 +49,15 @@
                   (when-not (:url request)
                     (throw (IllegalArgumentException. ":url is required when passing in a request")))
                   [:request
-                   [:url (keyword-check (:url request))]
-                   [:component (keyword-check (:component request))]
-                   [:action (keyword-check (:action request))]
+                   [:url (sanitize (:url request))]
+                   [:component (sanitize (:component request))]
+                   [:action (sanitize (:action request))]
                    (map->xml-vars request :cgi-data)
                    (map->xml-vars request :params)
                    (map->xml-vars request :session)])
                 [:server-environment
-                 [:project-root (keyword-check project-root)]
-                 [:environment-name (keyword-check environment-name)]]])))))
+                 [:project-root (sanitize project-root)]
+                 [:environment-name (sanitize environment-name)]]])))))
 
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
