@@ -4,7 +4,7 @@ Clojure client for the [Hoptoad API](http://hoptoadapp.com/pages/home).
 
 ## Usage
 
-    (reqire '[clj-hoptoad.core :as hoptoad])
+    (require '[clj-hoptoad.core :as hoptoad])
 
     (def request {:url "http://example.com" :component "foo" :action "bar"
                  :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
