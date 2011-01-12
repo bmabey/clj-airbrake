@@ -6,14 +6,14 @@
            [clojure.xml :as xml]
            [clojure.contrib.zip-filter.xml :as zf]))
 
-(def version "0.1.0") ; Can I get this from project.clj?
+(def version "0.1.2") ; Can I get this from project.clj? Answer: currently only by loading and parsing project.clj
 
-(defn- xml-ex-response [exception]
+(defn- xml-ex-response [exception & [message-prefix]]
   (let [{:keys [trace-elems]} (parse-exception exception)
         message (str exception)]
     [:error
      [:class (first (split #":" message))]
-     [:message message]
+     [:message (.trim (str message-prefix " " message))]
      (vec (cons :backtrace
                 (for [{:keys [file line], :as elem} trace-elems]
                   [:line {:file file :number line :method (method-str elem)}])))]))
@@ -23,7 +23,6 @@
   [v]
   (escape {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"} (as-str v)))
 
-
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
     (when-not (empty? sub-map)
@@ -32,9 +31,7 @@
                    [:var {:key (sanitize k)} (sanitize v)]))))))
 
 (defn make-notice
-  ([api-key environment-name project-root exception]
-    (make-notice api-key environment-name project-root exception nil))
-  ([api-key environment-name project-root exception request]
+  ([api-key environment-name project-root exception & [request message-prefix]]
     (binding [*prxml-indent* 2]
       (with-out-str
         (prxml [:decl! "1.0"]
@@ -44,7 +41,7 @@
                  [:name "clj-hoptoad"]
                  [:version version]
                  [:url "http://github.com/leadtune/clj-hoptoad"]]
-                (xml-ex-response exception)
+                (xml-ex-response exception message-prefix)
                 (when request
                   (when-not (:url request)
                     (throw (IllegalArgumentException. ":url is required when passing in a request")))

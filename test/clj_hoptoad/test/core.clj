@@ -3,8 +3,7 @@
   (:use clojure.contrib.zip-filter.xml
         clojure.test
         midje.semi-sweet)
-  (:require
-            [clojure.zip :as zip]
+  (:require [clojure.zip :as zip]
             [clojure.xml :as xml]
             [clj-http.client :as client]))
 
@@ -71,8 +70,11 @@
       (is (seq (xml-> notice-xml :request)))
       (is (empty? (xml-> notice-xml :request :session)))
       (is (empty? (xml-> notice-xml :request :params)))
-      (is (empty? (xml-> notice-xml :request :cgi-data))))))
-
+      (is (empty? (xml-> notice-xml :request :cgi-data)))))
+  (testing "when a message prefix is added"
+    (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "Foo") {:url "foo"} "bar")]
+      (are [expected-text path] (= expected-text (text-in notice-xml path))
+         "bar java.lang.Exception: Foo" [:error :message]))))
 
 (deftest test-send-notice
   (expect (send-notice "<notice>...</notice>") => {:error-id 42 :id 100 :url "http://sub.hoptoadapp.com/errors/42/notices/100"}
