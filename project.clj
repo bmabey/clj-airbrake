@@ -6,6 +6,4 @@
                  [clj-stacktrace "0.2.0"]]
   :dev-dependencies [[enlive "1.0.0-SNAPSHOT"]
                      [swank-clojure "1.2.1"]
-                     [midje "0.5.0"]
-                     [lein-difftest "1.2.2"]]
-  :hooks [leiningen.hooks.difftest])
+                     [midje "0.5.0"]])
