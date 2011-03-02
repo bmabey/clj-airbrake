@@ -19,7 +19,7 @@
 (defn wrap-hoptoad
   "Catches exceptions and sends Hoptoad notification."
   ([handler api-key]
-     (wrap-hoptoad api-key "development"))
+     (wrap-hoptoad handler api-key "development"))
   ([handler api-key environment-name]
      (fn [req]
        (try (handler req)
