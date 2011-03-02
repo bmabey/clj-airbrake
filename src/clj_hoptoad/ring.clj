@@ -1,5 +1,6 @@
 (ns clj-hoptoad.ring
-  (:use clj-hoptoad.core))
+  (:use clj-hoptoad.core)
+  (:require [clojure.contrib.java-utils :as j]))
 
 (defn request-to-message
   "Maps the ring request map to the format of the hoptoad params"
@@ -26,7 +27,7 @@
             (catch Exception e
               (notify api-key
                       environment-name
-                      "/app/dir"
+                      (j/get-system-property "user.dir")
                       e
                       (request-to-message req))
               (throw e))))))
