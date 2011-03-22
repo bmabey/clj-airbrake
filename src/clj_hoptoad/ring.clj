@@ -11,11 +11,10 @@
              (:uri req))
    :component "component"
    :action "action"
-   :cgi-data {}
+   :cgi-data (get req :headers {})
    :params (or (:params req)
                {:query-string (:query-string req)})
-   :session (or (:session req)
-                {})})
+   :session (get req :sesion {})})
 
 (defn wrap-hoptoad
   "Catches exceptions and sends Hoptoad notification."

@@ -6,12 +6,16 @@
               :scheme :http
               :request-method :get
               :query-string nil
-              :content-type nil
+              :content-type "application/json"
               :uri "/"
               :server-name "localhost"
               :headers {:accept-language "en-US"
-                        :accept-encoding "gzip, deflate"}
-              :content-length nil
+                        :accept-encoding "gzip, deflate"
+                        :content-length "1028"
+                        :content-type "application/json"
+                        :host "localhost:3000"
+                        :user-agent "firefox"}
+              :content-length 1028
               :server-port 8080
               :character-encoding nil})
 
@@ -34,7 +38,7 @@
 
   (testing "notifies hoptoad with request params"
     (let [app (fn [req] (/ 1 0))
-          notify-params (atom nil) 
+          notify-params (atom nil)
           hoptoad-message (request-to-message request)]
       (binding [clj-hoptoad.core/notify (fn [& args] (reset! notify-params args))]
         (try (call-app app request)
@@ -61,5 +65,10 @@
                                             :params {:foo "bar"}))))))
     (is (= {}
            (:session message)))
-    (is (= {}
+    (is (= {:accept-language "en-US"
+            :accept-encoding "gzip, deflate"
+            :content-length "1028"
+            :content-type "application/json"
+            :host "localhost:3000"
+            :user-agent "firefox"}
            (:cgi-data message)))))
