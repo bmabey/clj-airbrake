@@ -16,7 +16,7 @@ Clojure client for the [Hoptoad API](http://hoptoadapp.com/pages/home).
     (hoptoad/notify "my-api-key" "production" "/app/dir" exception request)
     => {:error-id 42 :id 100 :url "http://sub.hoptoadapp.com/errors/42/notices/100"}
 
-Note that the `request` is one-to-one with Hoptoad's API and *not* a [Ring][ring] request. (Providing a mapper function is on the TODO list.)
+Note that the `request` is one-to-one with Hoptoad's API and *not* a [Ring][ring] request.  If you are using ring please <a href="#middleware">see below</a> about the provided ring middleware.
 
 The `request` is optional but is the only way the Hoptoad API allows you to pass in additonal information.
 So, if you are using the client out of the context of a web application you can use the request to send in
@@ -47,8 +47,9 @@ Running the tests:
 
     $ lein deps
     $ lein test
-    
+
 ## Ring Middleware
+<a name="middleware" />
 
 Basic support for Ring is provided in the `clj-hoptoad.ring` namespace: request parameters and session information are passed to Hoptoad. A simple ring example:
 
