@@ -47,11 +47,29 @@ Running the tests:
 
     $ lein deps
     $ lein test
+    
+## Ring Middleware
+
+Basic support for Ring is provided in the `clj-hoptoad.ring` namespace: request parameters and session information are passed to Hoptoad. A simple ring example:
+
+    (use 'ring.adapter.jetty)
+    (use 'ring.middleware.params)
+    (use 'ring.middleware.stacktrace)
+    (use 'clj-hoptoad.ring)
+
+    (defn app [req]
+      {:status  200
+       :headers {"Content-Type" "text/html"}
+       :body    (throw (Exception. "Testing"))})
+
+    (run-jetty (-> app
+                   (wrap-params)
+                   (wrap-hoptoad "MY-API-KEY")
+                   (wrap-stacktrace))
+               {:port 8080})
 
 ## TODO
 
- * Provide mapper function for [Ring][ring] requests.
- * [Ring][ring] middleware to at least serve as an example.
  * Param filtering. (i.e. automatically filter out any 'password' params)
  * Allow for certain environments to be ignored... defaulting to `#{"test" "development"}`
  * Configuartion management?  i.e. set api-key once
