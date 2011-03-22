@@ -13,7 +13,7 @@
    :action "action"
    :cgi-data {}
    :params (or (:params req)
-               {:query-string (:query-string req)}) 
+               {:query-string (:query-string req)})
    :session (or (:session req)
                 {})})
 
@@ -22,6 +22,8 @@
   ([handler api-key]
      (wrap-hoptoad handler api-key "development"))
   ([handler api-key environment-name]
+     (wrap-hoptoad handler api-key environment-name request-to-message))
+  ([handler api-key environment-name request-mapper]
      (fn [req]
        (try (handler req)
             (catch Exception e
@@ -29,5 +31,5 @@
                       environment-name
                       (j/get-system-property "user.dir")
                       e
-                      (request-to-message req))
+                      (request-mapper req))
               (throw e))))))
