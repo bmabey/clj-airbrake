@@ -77,9 +77,9 @@
          "bar java.lang.Exception: Foo" [:error :message]))))
 
 (deftest test-send-notice
-  (expect (send-notice "<notice>...</notice>") => {:error-id 42 :id 100 :url "http://sub.hoptoadapp.com/errors/42/notices/100"}
+  (expect (send-notice "<notice>...</notice>") => {:error-id 2285317953 :id 100 :url "http://sub.hoptoadapp.com/errors/42/notices/100"}
           (fake (client/post
                  "http://hoptoadapp.com/notifier_api/v2/notices" {:body "<notice>...</notice>", :content-type :xml, :accept :xml}) =>
-                 
+
                  {:status 200, :headers {"server" "nginx/0.6.35"},
-                  :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">42</error-id>\n  <url>http://sub.hoptoadapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))
+                  :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">2285317953</error-id>\n  <url>http://sub.hoptoadapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))
