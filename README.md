@@ -71,6 +71,7 @@ Basic support for Ring is provided in the `clj-hoptoad.ring` namespace: request 
 
 ## TODO
 
+ * [Hoptaoad -> Airbrake!](http://robots.thoughtbot.com/post/7665411707/hoptoad-is-now-airbrake) Rename project to clj-airbrake and make appropriate ns changes. (The POSTing url is already updated).
  * Param filtering. (i.e. automatically filter out any 'password' params)
  * Allow for certain environments to be ignored... defaulting to `#{"test" "development"}`
  * Configuartion management?  i.e. set api-key once

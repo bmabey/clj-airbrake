@@ -60,7 +60,7 @@
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
 
 (defn send-notice [notice]
-  (let [response (client/post "http://hoptoadapp.com/notifier_api/v2/notices"
+  (let [response (client/post "http://airbrakeapp.com/notifier_api/v2/notices"
                               {:body notice :content-type :xml :accept :xml})
         body-xml (-> response :body parse-xml)
         text-at (fn [key] (first (zf/xml-> body-xml key zf/text)))]
