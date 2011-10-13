@@ -30,7 +30,7 @@ enviromental variables or anything else that may help in troubleshooting.  Note,
 Leiningen:
 
     :dependencies
-      [[clj-airbrake "0.1.3"] ...]
+      [[clj-airbrake "0.1.4"] ...]
 
 Maven:
 
