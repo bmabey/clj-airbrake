@@ -1,5 +1,5 @@
-(ns clj-hoptoad.test.ring
-  (:use [clj-hoptoad.ring] :reload)
+(ns clj-airbrake.test.ring
+  (:use [clj-airbrake.ring] :reload)
   (:use clojure.test))
 
 (def request {:remote-addr "127.0.0.1"
@@ -22,9 +22,9 @@
 (defn- call-app
   [app req]
   (let [environment-name "production"]
-    ((wrap-hoptoad app "api-key" environment-name) req)))
+    ((wrap-airbrake app "api-key" environment-name) req)))
 
-(deftest test-wrap-hoptoad
+(deftest test-wrap-airbrake
   (testing "returns response when no exception thrown"
     (let [app (fn [req] "response")]
       (is (= "response"
@@ -32,18 +32,18 @@
 
   (testing "re-throws exception"
     (let [app (fn [req] (/ 1 0))]
-      (binding [clj-hoptoad.core/notify (fn [& args] nil)]
+      (binding [clj-airbrake.core/notify (fn [& args] nil)]
         (is (thrown? ArithmeticException
                      (call-app app request))))))
 
-  (testing "notifies hoptoad with request params"
+  (testing "notifies airbrake with request params"
     (let [app (fn [req] (/ 1 0))
           notify-params (atom nil)
-          hoptoad-message (request-to-message request)]
-      (binding [clj-hoptoad.core/notify (fn [& args] (reset! notify-params args))]
+          airbrake-message (request-to-message request)]
+      (binding [clj-airbrake.core/notify (fn [& args] (reset! notify-params args))]
         (try (call-app app request)
              (catch ArithmeticException e))
-        (is (= hoptoad-message
+        (is (= airbrake-message
                (last @notify-params)))))))
 
 

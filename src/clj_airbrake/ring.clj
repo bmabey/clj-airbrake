@@ -1,9 +1,9 @@
-(ns clj-hoptoad.ring
-  (:use clj-hoptoad.core)
+(ns clj-airbrake.ring
+  (:use clj-airbrake.core)
   (:require [clojure.contrib.java-utils :as j]))
 
 (defn request-to-message
-  "Maps the ring request map to the format of the hoptoad params"
+  "Maps the ring request map to the format of the airbrake params"
   [req]
   {:url (str (name (:scheme req))
              "://"
@@ -16,12 +16,12 @@
                {:query-string (:query-string req)})
    :session (get req :sesion {})})
 
-(defn wrap-hoptoad
-  "Catches exceptions and sends Hoptoad notification."
+(defn wrap-airbrake
+  "Catches exceptions and sends Airbrake notification."
   ([handler api-key]
-     (wrap-hoptoad handler api-key "development"))
+     (wrap-airbrake handler api-key "development"))
   ([handler api-key environment-name]
-     (wrap-hoptoad handler api-key environment-name request-to-message))
+     (wrap-airbrake handler api-key environment-name request-to-message))
   ([handler api-key environment-name request-mapper]
      (fn [req]
        (try (handler req)
