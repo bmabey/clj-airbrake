@@ -6,7 +6,7 @@
            [clojure.xml :as xml]
            [clojure.contrib.zip-filter.xml :as zf]))
 
-(def version "0.1.2") ; Can I get this from project.clj? Answer: currently only by loading and parsing project.clj
+(def version "0.1.4") ; TODO: get info from project.clj
 
 (defn- xml-ex-response [exception & [message-prefix]]
   (let [{:keys [trace-elems]} (parse-exception exception)
