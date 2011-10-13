@@ -71,7 +71,7 @@ Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request
 
 ## TODO
 
- * Param filtering. (i.e. automatically filter out any 'password' params)
+ * Param filtering. (e.g. automatically filter out any 'password' params)
  * Allow for certain environments to be ignored... defaulting to `#{"test" "development"}`
  * Configuartion management?  i.e. set api-key once
 
