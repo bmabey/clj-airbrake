@@ -1,4 +1,4 @@
-(ns clj-hoptoad.core
+(ns clj-airbrake.core
   (use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]])
        (clojure.contrib [string :only [split escape as-str]] prxml))
   (require [clj-http.client :as client]
@@ -38,9 +38,9 @@
                [:notice {:version "2.0"}
                 [:api-key api-key]
                 [:notifier
-                 [:name "clj-hoptoad"]
+                 [:name "clj-airbrake"]
                  [:version version]
-                 [:url "http://github.com/leadtune/clj-hoptoad"]]
+                 [:url "http://github.com/leadtune/clj-airbrake"]]
                 (xml-ex-response exception message-prefix)
                 (when request
                   (when-not (:url request)

@@ -1,5 +1,5 @@
-(ns clj-hoptoad.test.core
-  (:use [clj-hoptoad.core] :reload)
+(ns clj-airbrake.test.core
+  (:use [clj-airbrake.core] :reload)
   (:use clojure.contrib.zip-filter.xml
         clojure.test
         midje.semi-sweet)
@@ -57,7 +57,7 @@
     (testing "backtraces"
       (let [first-line (first (backtrace-lines notice-xml))]
         (is (= "core.clj" (:file first-line)))
-        (is (= "clj-hoptoad.test.core/fn[fn]" (:method first-line)))
+        (is (= "clj-airbrake.test.core/fn[fn]" (:method first-line)))
         (is (re-matches #"^\d+$" (:number first-line))))))
   (testing "when no request is provided"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo"))]
