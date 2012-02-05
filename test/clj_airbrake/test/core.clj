@@ -1,6 +1,6 @@
 (ns clj-airbrake.test.core
   (:use [clj-airbrake.core] :reload)
-  (:use clojure.contrib.zip-filter.xml
+  (:use clojure.data.zip.xml
         clojure.test
         midje.semi-sweet)
   (:require [clojure.zip :as zip]

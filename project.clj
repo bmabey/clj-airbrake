@@ -1,11 +1,12 @@
-(defproject clj-airbrake "0.1.4"
+(defproject clj-airbrake "0.1.5"
   :description "Airbrake Client"
-  :dependencies [[org.clojure/clojure "1.2.0"]
-                 [org.clojure/clojure-contrib "1.2.0"]
-                 [clj-http "0.1.1"]
-                 [clj-stacktrace "0.2.0"]
-                 [ring/ring-core "0.3.6"]]
+  :dependencies [[org.clojure/clojure "1.3.0"]
+                 [clj-http "0.2.7"]
+                 [clj-stacktrace "0.2.4"]
+                 [ring/ring-core "0.3.6"]
+                 [org.clojure/data.zip "0.1.0"]
+                 [prxml "1.3.0"]]
   :dev-dependencies [[lein-clojars "0.6.0"]
                      [enlive "1.0.0-SNAPSHOT"]
-                     [swank-clojure "1.2.1"]
-                     [midje "0.5.0"]])
+                     [swank-clojure "1.3.4"]
+                     [midje "1.3.1"]])
