@@ -7,7 +7,33 @@
             [clojure.xml :as xml]
             [clojure.data.zip.xml :as zf]))
 
-(def version "0.1.4") ; TODO: get info from project.clj
+(defn classloader []
+  (->
+   (fn [])
+   (.getClass)
+   (.getClassLoader)))
+
+(defn projects
+  "Returns a seq of URLs, the resources all project.clj's on the classpath"
+  []
+  (-> (classloader)
+      (.getResources "project.clj")
+      (enumeration-seq)))
+
+(defn airbrake-project
+  "Returns our airbrake project.clj, from the jar"
+  []
+  (->> (projects)
+       (filter #(re-find #"clj-airbrake" (str %)))
+       (first)
+       (slurp)
+       (read-string)))
+
+(defn get-version []
+  (-> (airbrake-project)
+      (nth 2)))
+
+(def version (get-version))
 
 (defn- xml-ex-response [exception & [message-prefix]]
   (let [{:keys [trace-elems]} (parse-exception exception)
