@@ -1,18 +1,45 @@
 (ns clj-airbrake.core
-  (use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]])
-       (clojure.contrib [string :only [split escape as-str]] prxml))
-  (require [clj-http.client :as client]
-           [clojure.zip :as zip]
-           [clojure.xml :as xml]
-           [clojure.contrib.zip-filter.xml :as zf]))
+  (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
+  (:use [clojure.string :only (split escape)])
+  (:use [clojure.contrib.prxml])
+  (:require [clj-http.client :as client]
+            [clojure.zip :as zip]
+            [clojure.xml :as xml]
+            [clojure.data.zip.xml :as zf]))
 
-(def version "0.1.4") ; TODO: get info from project.clj
+(defn classloader []
+  (->
+   (fn [])
+   (.getClass)
+   (.getClassLoader)))
+
+(defn projects
+  "Returns a seq of URLs, the resources all project.clj's on the classpath"
+  []
+  (-> (classloader)
+      (.getResources "project.clj")
+      (enumeration-seq)))
+
+(defn airbrake-project
+  "Returns our airbrake project.clj, from the jar"
+  []
+  (->> (projects)
+       (filter #(re-find #"clj-airbrake" (str %)))
+       (first)
+       (slurp)
+       (read-string)))
+
+(defn get-version []
+  (-> (airbrake-project)
+      (nth 2)))
+
+(def version (get-version))
 
 (defn- xml-ex-response [exception & [message-prefix]]
   (let [{:keys [trace-elems]} (parse-exception exception)
         message (str exception)]
     [:error
-     [:class (first (split #":" message))]
+     [:class (first (split message #":"))]
      [:message (.trim (str message-prefix " " message))]
      (vec (cons :backtrace
                 (for [{:keys [file line], :as elem} trace-elems]
@@ -21,7 +48,8 @@
 (defn- sanitize
   "converts v to a string and escapes html entities"
   [v]
-  (escape {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"} (as-str v)))
+  (when v
+    (escape (as-str v) {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"})))
 
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
@@ -68,5 +96,5 @@
      :error-id (BigInteger. (text-at :error-id))
      :url (text-at :url)}))
 
-(defn notify [& args]
+(defn ^:dynamic notify [& args]
   (send-notice (apply make-notice args)))

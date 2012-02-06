@@ -1,6 +1,5 @@
 (ns clj-airbrake.ring
-  (:use clj-airbrake.core)
-  (:require [clojure.contrib.java-utils :as j]))
+  (:use clj-airbrake.core))
 
 (defn request-to-message
   "Maps the ring request map to the format of the airbrake params"
@@ -28,7 +27,7 @@
             (catch Exception e
               (notify api-key
                       environment-name
-                      (j/get-system-property "user.dir")
+                      (System/getProperty "user.dir")
                       e
                       (request-mapper req))
               (throw e))))))
