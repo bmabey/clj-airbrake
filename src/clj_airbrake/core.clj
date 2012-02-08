@@ -5,33 +5,15 @@
   (:require [clj-http.client :as client]
             [clojure.zip :as zip]
             [clojure.xml :as xml]
+            [clojure.java.io :as jio]
             [clojure.data.zip.xml :as zf]))
 
-(defn classloader []
-  (->
-   (fn [])
-   (.getClass)
-   (.getClassLoader)))
-
-(defn projects
-  "Returns a seq of URLs, the resources all project.clj's on the classpath"
-  []
-  (-> (classloader)
-      (.getResources "project.clj")
-      (enumeration-seq)))
-
-(defn airbrake-project
-  "Returns our airbrake project.clj, from the jar"
-  []
-  (->> (projects)
-       (filter #(re-find #"clj-airbrake" (str %)))
-       (first)
-       (slurp)
-       (read-string)))
 
 (defn get-version []
-  (-> (airbrake-project)
-      (nth 2)))
+  (or (System/getProperty "clj-airbrake.version")
+      (let [props (doto (java.util.Properties.)
+                    (.load (jio/reader (jio/resource "META-INF/maven/clj-airbrake/clj-airbrake/pom.properties"))))]
+        (.getProperty props "version"))))
 
 (def version (get-version))
 
