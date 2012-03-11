@@ -48,14 +48,14 @@ Leiningen:
 
 ```clojure
 :dependencies
-  [[clj-airbrake "0.1.5"] ...]
+  [[clj-airbrake "1.0.0"] ...]
 ```
 Maven:
 
     <dependency>
       <groupId>clj-airbrake</groupId>
       <artifactId>clj-airbrake</artifactId>
-      <version>0.1.5</version>
+      <version>1.0.0</version>
     </dependency>
 
 

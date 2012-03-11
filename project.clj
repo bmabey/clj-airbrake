@@ -1,4 +1,4 @@
-(defproject clj-airbrake "0.1.6"
+(defproject clj-airbrake "1.0.0"
   :description "Airbrake Client"
   :dependencies [[clj-http "0.2.7"]
                  [clj-stacktrace "0.2.4"]
