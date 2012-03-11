@@ -8,6 +8,12 @@
             [clojure.java.io :as jio]
             [clojure.data.zip.xml :as zf]))
 
+(def api-host
+  "Host to send the errors to."
+  (atom "airbrakeapp.com"))
+
+(defn set-host! [new-host]
+  (reset! api-host new-host))
 
 (defn get-version []
   (or (System/getProperty "clj-airbrake.version")
@@ -69,8 +75,8 @@
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
 
-(defn send-notice [notice]
-  (let [response (client/post "http://airbrakeapp.com/notifier_api/v2/notices"
+(defn send-notice [notice & [host]]
+  (let [response (client/post (str "http://" (or host @api-host) "/notifier_api/v2/notices")
                               {:body notice :content-type :xml :accept :xml})
         body-xml (-> response :body parse-xml)
         text-at (fn [key] (first (zf/xml-> body-xml key zf/text)))]
