@@ -77,7 +77,7 @@
          "bar java.lang.Exception: Foo" [:error :message]))))
 
 (deftest test-send-notice
-  (expect (send-notice "<notice>...</notice>") => {:error-id 2285317953 :id 100 :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
+  (expect (send-notice "<notice>...</notice>") => {:error-id "2285317953" :id "100" :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
           (fake (client/post
                  "http://airbrakeapp.com/notifier_api/v2/notices" {:body "<notice>...</notice>", :content-type :xml, :accept :xml}) =>
 
