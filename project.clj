@@ -1,4 +1,4 @@
-(defproject clj-airbrake "0.1.4"
+(defproject clj-airbrake "0.1.5-LT"
   :description "Airbrake Client"
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
