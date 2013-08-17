@@ -48,14 +48,14 @@ Leiningen:
 
 ```clojure
 :dependencies
-  [[clj-airbrake "2.0.0"] ...]
+  [[clj-airbrake "2.0.1"] ...]
 ```
 Maven:
 
     <dependency>
       <groupId>clj-airbrake</groupId>
       <artifactId>clj-airbrake</artifactId>
-      <version>2.0.0</version>
+      <version>2.0.1</version>
     </dependency>
 
 
@@ -101,4 +101,4 @@ Copyright (C) 2010 LeadTune and Ben Mabey
 
 Released under the MIT License: <http://www.opensource.org/licenses/mit-license.php>
 
-[ring]: http://example.com/
+[ring]: https://github.com/ring-clojure/ring/wiki
