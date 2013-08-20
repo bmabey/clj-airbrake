@@ -1,7 +1,7 @@
 (ns clj-airbrake.core
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
   (:use [clojure.string :only (split escape)])
-  (:use [clojure.contrib.prxml])
+  (:use [clojure.data.xml :only [sexp-as-element indent-str]])
   (:require [clj-http.client :as client]
             [clojure.zip :as zip]
             [clojure.xml :as xml]
@@ -23,7 +23,7 @@
 
 (def version (get-version))
 
-(defn- xml-ex-response [exception & [message-prefix]]
+(defn xml-ex-response [exception & [message-prefix]]
   (let [{:keys [trace-elems]} (parse-exception exception)
         message (str exception)]
     [:error
@@ -48,29 +48,28 @@
 
 (defn make-notice
   ([api-key environment-name project-root exception & [request message-prefix]]
-    (binding [*prxml-indent* 2]
-      (with-out-str
-        (prxml [:decl! "1.0"]
-               [:notice {:version "2.0"}
-                [:api-key api-key]
-                [:notifier
-                 [:name "clj-airbrake"]
-                 [:version version]
-                 [:url "http://github.com/leadtune/clj-airbrake"]]
-                (xml-ex-response exception message-prefix)
-                (when request
-                  (when-not (:url request)
-                    (throw (IllegalArgumentException. ":url is required when passing in a request")))
-                  [:request
-                   [:url (sanitize (:url request))]
-                   [:component (sanitize (:component request))]
-                   [:action (sanitize (:action request))]
-                   (map->xml-vars request :cgi-data)
-                   (map->xml-vars request :params)
-                   (map->xml-vars request :session)])
-                [:server-environment
-                 [:project-root (sanitize project-root)]
-                 [:environment-name (sanitize environment-name)]]])))))
+    (indent-str
+      (sexp-as-element
+             [:notice {:version "2.0"}
+              [:api-key api-key]
+              [:notifier
+               [:name "clj-airbrake"]
+               [:version version]
+               [:url "http://github.com/leadtune/clj-airbrake"]]
+              (xml-ex-response exception message-prefix)
+              (when request
+                (when-not (:url request)
+                  (throw (IllegalArgumentException. ":url is required when passing in a request")))
+                [:request
+                 [:url (sanitize (:url request))]
+                 [:component (sanitize (:component request))]
+                 [:action (sanitize (:action request))]
+                 (map->xml-vars request :cgi-data)
+                 (map->xml-vars request :params)
+                 (map->xml-vars request :session)])
+              [:server-environment
+               [:project-root (sanitize project-root)]
+               [:environment-name (sanitize environment-name)]]]))))
 
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
