@@ -5,7 +5,7 @@
         midje.semi-sweet)
   (:require [clojure.zip :as zip]
             [clojure.xml :as xml]
-            [clj-http.client :as client]))
+            [clj-http.lite.client :as client]))
 
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
