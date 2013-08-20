@@ -12,5 +12,4 @@
              {:resource-paths ["test-resources"],
               :dependencies
               [[enlive "1.0.0-SNAPSHOT"]
-               [midje "1.3.1"]]}}
-  :plugins [[lein-swank "1.4.1"] [lein-clojars "0.6.0"]])
+               [midje "1.3.1"]]}})
