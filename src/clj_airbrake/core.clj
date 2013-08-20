@@ -2,7 +2,7 @@
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
   (:use [clojure.string :only (split escape)])
   (:use [clojure.data.xml :only [sexp-as-element indent-str]])
-  (:require [clj-http.client :as client]
+  (:require [clj-http.lite.client :as client]
             [clojure.zip :as zip]
             [clojure.xml :as xml]
             [clojure.java.io :as jio]
