@@ -1,6 +1,7 @@
 (defproject clj-airbrake/clj-airbrake "2.1.0"
   :description "Airbrake Client"
   :min-lein-version "2.0.0"
+  :url "https://github.com/christianblunden/clj-airbrake"
   :dependencies [[clj-http "0.7.6"]
                  [clj-stacktrace "0.2.6"]
                  [ring/ring-core "0.3.6"]
