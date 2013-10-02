@@ -3,6 +3,7 @@
   (:use [clojure.string :only (split escape)])
   (:use [clojure.data.xml :only [sexp-as-element indent-str]])
   (:require [clj-http.lite.client :as client]
+            [org.httpkit.client :as httpclient]
             [clojure.zip :as zip]
             [clojure.xml :as xml]
             [clojure.java.io :as jio]
@@ -74,14 +75,28 @@
 (defn- parse-xml [xml-str]
   (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
 
-(defn send-notice [notice & [host]]
-  (let [response (client/post (str "http://" (or host @api-host) "/notifier_api/v2/notices")
-                              {:body notice :content-type :xml :accept :xml})
-        body-xml (-> response :body parse-xml)
+(defn- get-url [host] (str "http://" (or host @api-host) "/notifier_api/v2/notices"))
+
+(defn handle-response [response]
+  (let [body-xml (-> response :body parse-xml)
         text-at (fn [key] (first (zf/xml-> body-xml key zf/text)))]
     {:id (text-at :id)
      :error-id (text-at :error-id)
      :url (text-at :url)}))
 
+(defn send-notice [notice & [host]]
+  (-> host
+      get-url
+      (client/post {:body notice :content-type :xml :accept :xml})
+      handle-response))
+
+(defn send-notice-async [callback notice & [host]]
+  (httpclient/post (get-url host)
+                   {:body notice :content-type :xml :accept :xml}
+                   #(-> % handle-response callback)))
+
 (defn ^:dynamic notify [& args]
   (send-notice (apply make-notice args)))
+
+(defn ^:dynamic notify-async [callback & args]
+  (send-notice-async callback (apply make-notice args)))
