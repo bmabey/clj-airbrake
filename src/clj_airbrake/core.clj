@@ -13,6 +13,7 @@
   "Host to send the errors to."
   (atom "airbrakeapp.com"))
 
+;; TODO: replace with alter-var-root or get rid of this completely
 (defn set-host! [new-host]
   (reset! api-host new-host))
 

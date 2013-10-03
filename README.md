@@ -14,8 +14,16 @@ Clojure client for the [Airbrake API](http://www.airbrakeapp.com/pages/home)
 
 (def exception (try (throw (Exception. "Foo")) (catch Exception e e)) ; throw to get a stacktrace
 
+;; send in blocking style using the JDK's http libs
 (airbrake/notify "my-api-key" "production" "/app/dir" exception request)
 => {:error-id 42 :id 100 :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
+
+
+;; send async using http-kit and callbacks
+(airbrake/notify-async (fn [resp] ...) "my-api-key" "production" "/app/dir" exception request)
+
+;; the notify and notify-async fns are also dynamic vars if you wish to swap them out for
+;; a different implementation using the same XML request helpers in clj-airbrake.core
  ```
 
 Note that the `request` is one-to-one with Airbrake's API and *not* a [Ring][ring] request.  If you are using ring please <a href="#middleware">see below</a> about the provided ring middleware.
