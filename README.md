@@ -56,7 +56,7 @@ Leiningen:
 
 ```clojure
 :dependencies
-  [[clj-airbrake "2.2.0"] ...]
+  [[clj-airbrake "2.3.0"] ...]
 ```
 Maven:
 
