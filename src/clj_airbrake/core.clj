@@ -41,12 +41,17 @@
   (when v
     (escape (name v) {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"})))
 
+(defn map?->str [v]
+  (if (map? v)
+    (prn-str v)
+    v))
+
 (defn- map->xml-vars [hash-map sub-map-key]
   (when-let [sub-map (sub-map-key hash-map)]
     (when-not (empty? sub-map)
       (vec (cons sub-map-key
                  (for [[k,v] sub-map]
-                   [:var {:key (sanitize k)} (sanitize v)]))))))
+                   [:var {:key (sanitize k)} (-> v map?->str sanitize)]))))))
 
 (defn make-notice
   ([api-key environment-name project-root exception & [request message-prefix]]

@@ -71,6 +71,9 @@
       (is (empty? (xml-> notice-xml :request :session)))
       (is (empty? (xml-> notice-xml :request :params)))
       (is (empty? (xml-> notice-xml :request :cgi-data)))))
+  (testing "when sub maps are provided"
+    (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "foo") {:url "foo" :session nil :params {:sub-map {:foo 42}}})]
+      (is (= (-> (xml-> notice-xml :request :params :var zip/node) first :content) ["{:foo 42}\n"]))))
   (testing "when a message prefix is added"
     (let [notice-xml (make-notice-zip "my-api-key" "test" "/testapp" (Exception. "Foo") {:url "foo"} "bar")]
       (are [expected-text path] (= expected-text (text-in notice-xml path))
