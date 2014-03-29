@@ -25,9 +25,9 @@
 
 (def version (get-version))
 
-(defn xml-ex-response [exception & [message-prefix]]
-  (let [{:keys [trace-elems]} (parse-exception exception)
-        message (str exception)]
+(defn xml-ex-response [throwable & [message-prefix]]
+  (let [{:keys [trace-elems]} (parse-exception throwable)
+        message (str throwable)]
     [:error
      [:class (first (split message #":"))]
      [:message (.trim (str message-prefix " " message))]
@@ -54,7 +54,7 @@
                    [:var {:key (sanitize k)} (-> v map?->str sanitize)]))))))
 
 (defn make-notice
-  ([api-key environment-name project-root exception & [request message-prefix]]
+  ([api-key environment-name project-root throwable & [request message-prefix]]
     (indent-str
       (sexp-as-element
              [:notice {:version "2.0"}
@@ -63,7 +63,7 @@
                [:name "clj-airbrake"]
                [:version version]
                [:url "http://github.com/leadtune/clj-airbrake"]]
-              (xml-ex-response exception message-prefix)
+              (xml-ex-response throwable message-prefix)
               (when request
                 (when-not (:url request)
                   (throw (IllegalArgumentException. ":url is required when passing in a request")))

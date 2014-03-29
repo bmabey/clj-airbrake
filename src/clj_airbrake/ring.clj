@@ -24,10 +24,10 @@
   ([handler api-key environment-name request-mapper]
      (fn [req]
        (try (handler req)
-            (catch Exception e
+            (catch Throwable t
               (notify api-key
                       environment-name
                       (System/getProperty "user.dir")
-                      e
+                      t
                       (request-mapper req))
-              (throw e))))))
+              (throw t))))))
