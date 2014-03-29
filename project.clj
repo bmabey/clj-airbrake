@@ -1,4 +1,4 @@
-(defproject clj-airbrake "2.4.0"
+(defproject clj-airbrake "2.4.1"
   :description "Airbrake Client"
   :min-lein-version "2.0.0"
   :url "https://github.com/bmabey/clj-airbrake"
