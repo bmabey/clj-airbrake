@@ -62,7 +62,11 @@
              (:params (request-to-message (assoc request :query-string "blah=yes")))))
       (is (= {:foo "bar"}
              (:params (request-to-message (assoc request
-                                            :params {:foo "bar"}))))))
+                                            :params {:foo "bar"})))))
+      (is (= "http://localhost/?blah=yes"
+             (:url (request-to-message (assoc request :query-string "blah=yes")))))
+      (is (= "http://localhost/?x[y]=1"
+             (:url (request-to-message (assoc request :query-string "x%5By%5D=1"))))))
     (is (= {}
            (:session message)))
     (is (= {:accept-language "en-US"
