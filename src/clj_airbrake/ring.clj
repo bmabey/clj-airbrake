@@ -1,6 +1,6 @@
 (ns clj-airbrake.ring
   (:use clj-airbrake.core)
-  (:use [ring.util.codec :only (url-decode)]))
+  (:require [ring.util.codec :as codec :refer [url-decode]]))
 
 (defn request-to-message
   "Maps the ring request map to the format of the airbrake params"
@@ -9,7 +9,7 @@
              "://"
              (:server-name req)
              (:uri req)
-             (if query-string (str "?" (url-decode query-string))))
+             (when query-string (str "?" (codec/url-decode query-string))))
    :component "component"
    :action "action"
    :cgi-data (get req :headers {})
