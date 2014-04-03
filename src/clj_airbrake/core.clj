@@ -68,7 +68,7 @@
                 (when-not (:url request)
                   (throw (IllegalArgumentException. ":url is required when passing in a request")))
                 [:request
-                 [:url (sanitize (:url request))]
+                 [:url (:url request)]
                  [:component (sanitize (:component request))]
                  [:action (sanitize (:action request))]
                  (map->xml-vars request :cgi-data)
