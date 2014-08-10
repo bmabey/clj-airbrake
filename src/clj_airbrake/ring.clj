@@ -25,11 +25,9 @@
      (wrap-airbrake handler api-key environment-name request-to-message))
   ([handler api-key environment-name request-mapper]
      (fn [req]
-       (try (handler req)
-            (catch Throwable t
-              (notify api-key
+       (with-airbrake api-key
                       environment-name
                       (System/getProperty "user.dir")
-                      t
-                      (request-mapper req))
-              (throw t))))))
+                      (request-mapper req)
+                      (handler req)
+                      ))))

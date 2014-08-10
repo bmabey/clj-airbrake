@@ -86,3 +86,26 @@
 
                  {:status 200, :headers {"server" "nginx/0.6.35"},
                   :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">2285317953</error-id>\n  <url>http://sub.airbrakeapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))
+
+(deftest test-with-airbrake
+  (testing "executes code when no exception thrown"
+    (is (= "result"
+          (with-airbrake :api-key :environment-name :project-root :req "result"))))
+
+  (testing "re-throws exception"
+    (binding [clj-airbrake.core/notify (fn [& args] nil)]
+      (is (thrown? ArithmeticException
+                   (with-airbrake :api-key :environment-name :project-root :req (/ 1 0))))))
+
+  (testing "notifies airbrake with proper params"
+    (let [notify-params (atom nil)
+          ]
+      (binding [clj-airbrake.core/notify (fn [& args] (reset! notify-params args))]
+        (try (with-airbrake :api-key :environment-name :project-root :req (/ 1 0))
+             (catch ArithmeticException e))
+        (is (= 5
+               (count @notify-params)))
+        (is (= '(:api-key :environment-name :project-root)
+               (take 3 @notify-params)))
+        (is (= :req
+               (last @notify-params)))))))
