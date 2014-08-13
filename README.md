@@ -97,6 +97,26 @@ Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request
            {:port 8080})
 ```
 
+## Wrapper shorthand
+
+A typical application of Airbrake is recording any errors that happen in a script.
+You can do this with the `with-airbrake` wrapper. It will pass through exceptions happening inside and notify Airbrake.
+
+
+```clojure
+(use 'clj-airbrake.core')
+
+(defn -main
+  [& args]
+  (with-airbrake "MY-API-KEY"
+                 "production"
+                 (System/getProperty "user.dir")
+                 {:component "scripts", :action "my-script"}
+                 ;; your code goes here
+                 ))
+
+```
+
 ## TODO
 
  * Param filtering. (e.g. automatically filter out any 'password' params)
