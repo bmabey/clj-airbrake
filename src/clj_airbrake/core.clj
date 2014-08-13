@@ -107,13 +107,13 @@
 (defn ^:dynamic notify-async [callback & args]
   (send-notice-async callback (apply make-notice args)))
 
-(defmacro with-airbrake [api-key environment-name project-root req & body]
+(defmacro with-airbrake [airbrake-config req & body]
   `(try
     ~@body
     (catch Throwable t#
-      (notify ~api-key
-              ~environment-name
-              ~project-root
+      (notify (:api-key ~airbrake-config)
+              (:environment-name ~airbrake-config)
+              (:project-root ~airbrake-config)
               t#
               ~req)
       (throw t#))))
