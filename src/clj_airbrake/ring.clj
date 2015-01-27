@@ -15,7 +15,7 @@
    :cgi-data (get req :headers {})
    :params (or (:params req)
                {:query-string query-string})
-   :session (get req :sesion {})})
+   :session (get req :session {})})
 
 (defn wrap-airbrake
   "Catches exceptions and sends Airbrake notification."
