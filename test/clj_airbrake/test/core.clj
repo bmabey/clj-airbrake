@@ -84,8 +84,17 @@
           (fake (client/post
                  "http://airbrakeapp.com/notifier_api/v2/notices" {:body "<notice>...</notice>", :content-type :xml, :accept :xml}) =>
 
-                 {:status 200, :headers {"server" "nginx/0.6.35"},
-                  :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">2285317953</error-id>\n  <url>http://sub.airbrakeapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))
+                {:status 200, :headers {"server" "nginx/0.6.35"},
+                 :body "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<notice>\n  <error-id type=\"integer\">2285317953</error-id>\n  <url>http://sub.airbrakeapp.com/errors/42/notices/100</url>\n  <id type=\"integer\">100</id>\n</notice>\n"})))
+
+(deftest test-ignored-environments
+  (let [notice-args (atom nil)]
+    (with-redefs [clj-airbrake.core/send-notice (fn [& args] (reset! notice-args args))]
+      (notify "api-key" "development" "/project/root" (Exception.))
+      (is (= nil @notice-args))
+
+      (notify "api-key" "production" "/project/root" (Exception.))
+      (is (not (= nil @notice-args))))))
 
 (deftest test-with-airbrake
   (let [airbrake-config {:api-key "api-key"
@@ -106,6 +115,6 @@
             exception (atom nil)]
         (binding [clj-airbrake.core/notify (fn [& args] (reset! notify-params args))]
           (try (with-airbrake airbrake-config req (/ 1 0))
-            (catch ArithmeticException e (reset! exception e)))
+               (catch ArithmeticException e (reset! exception e)))
           (is (= ["api-key" "environment-name" "/project/root" @exception req]
                  @notify-params)))))))
