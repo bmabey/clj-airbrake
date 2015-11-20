@@ -46,6 +46,17 @@ can use the `#'set-host!` function:
 
 ```
 
+### Ignoring Environments
+
+If you want particular environments to not send notices to airbrake you can call the following:
+
+```clojure
+(require '[clj-airbrake.core :as airbrake])
+
+(airbrake/ignore-environment! "my-local-environment")
+```
+
+By default `test` and `development` are ignored.
 
 
 ## Installation
@@ -120,7 +131,6 @@ You can do this with the `with-airbrake` wrapper. It will pass through exception
 ## TODO
 
  * Param filtering. (e.g. automatically filter out any 'password' params)
- * Allow for certain environments to be ignored... defaulting to `#{"test" "development"}`
  * Configuartion management?  i.e. set api-key once
 
 ## License

@@ -101,11 +101,23 @@
                    {:body notice :content-type :xml :accept :xml}
                    #(-> % handle-response callback)))
 
+(def ignored-environments (atom ["development" "test"]))
+
+(defn ignore-environment! [environment-name]
+  (swap! ignored-environments conj environment-name))
+
+(defn is-ignored-environment? [environment]
+  (some #(= environment %) @ignored-environments))
+
 (defn ^:dynamic notify [& args]
-  (send-notice (apply make-notice args)))
+  (if (is-ignored-environment? (second args))
+    nil
+    (send-notice (apply make-notice args))))
 
 (defn ^:dynamic notify-async [callback & args]
-  (send-notice-async callback (apply make-notice args)))
+  (if (is-ignored-environment? (second args))
+    nil
+    (send-notice-async callback (apply make-notice args))))
 
 (defmacro with-airbrake [airbrake-config req & body]
   `(try
