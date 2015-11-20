@@ -56,30 +56,26 @@
                    {:body notice :content-type :json :accept :json}
                    #(-> % handle-response callback)))
 
-(def ignored-environments (atom ["development" "test"]))
-
-(defn ignore-environment! [environment-name]
-  (swap! ignored-environments conj environment-name))
-
-(defn is-ignored-environment? [environment]
-  (some #(= environment %) @ignored-environments))
+(defn is-ignored-environment? [environment ignored-environments]
+  (some #(= environment %) ignored-environments))
 
 (defn validate-config [{:keys [environment-name api-key project]}]
+  ;; Pull in Schema or another validation library?
   (if (or (s/blank? environment-name)
           (s/blank? api-key)
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
-(defn ^:dynamic notify [{:keys [environment-name api-key project] :as airbrake-config} throwable extra-data]
+(defn ^:dynamic notify [{:keys [environment-name api-key project ignored-environments] :as airbrake-config} throwable extra-data]
   (validate-config airbrake-config)
-  (if (is-ignored-environment? environment-name)
+  (if (is-ignored-environment? environment-name ignored-environments)
     nil
     (-> (make-notice environment-name throwable extra-data)
         (send-notice project api-key)) ))
 
-(defn ^:dynamic notify-async [callback {:keys [environment-name api-key project] :as airbrake-config} throwable extra-data]
+(defn ^:dynamic notify-async [callback {:keys [environment-name api-key project ignored-environments] :as airbrake-config} throwable extra-data]
   (validate-config airbrake-config)
-  (if (is-ignored-environment? environment-name)
+  (if (is-ignored-environment? environment-name ignored-environments)
     nil
     (-> (make-notice environment-name throwable extra-data)
         (send-notice-async callback  project api-key))))
