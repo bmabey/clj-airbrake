@@ -1,21 +1,10 @@
 (ns clj-airbrake.core
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
-  (:use [clojure.string :only (split escape)])
-  (:use [clojure.data.xml :only [sexp-as-element indent-str]])
   (:require [clj-http.lite.client :as client]
             [org.httpkit.client :as httpclient]
-            [clojure.zip :as zip]
-            [clojure.xml :as xml]
             [clojure.java.io :as jio]
-            [clojure.data.zip.xml :as zf]))
-
-(def api-host
-  "Host to send the errors to."
-  (atom "airbrakeapp.com"))
-
-;; TODO: replace with alter-var-root or get rid of this completely
-(defn set-host! [new-host]
-  (reset! api-host new-host))
+            [clojure.string :as s]
+            [cheshire.core :refer :all]))
 
 (defn get-version []
   (or (System/getProperty "clj-airbrake.version")
@@ -23,82 +12,48 @@
                     (.load (jio/reader (jio/resource "META-INF/maven/clj-airbrake/clj-airbrake/pom.properties"))))]
         (.getProperty props "version"))))
 
+(defn get-operating-system []
+  (str (System/getProperty "os.name") " " (System/getProperty "os.version") " " (System/getProperty "os.arch")))
+
 (def version (get-version))
 
-(defn xml-ex-response [throwable & [message-prefix]]
+(defn make-error [throwable]
   (let [{:keys [trace-elems]} (parse-exception throwable)
         message (str throwable)]
-    [:error
-     [:class (first (split message #":"))]
-     [:message (.trim (str message-prefix " " message))]
-     (vec (cons :backtrace
-                (for [{:keys [file line], :as elem} trace-elems]
-                  [:line {:file file :number line :method (method-str elem)}])))]))
+    {:type (str throwable)
+     :message message
+     :backtrace
+     (for [{:keys [file line], :as elem} trace-elems]
+       {:line line :file file :method (method-str elem)})}))
 
-(defn- sanitize
-  "converts v to a string and escapes html entities"
-  [v]
-  (when v
-    (escape (name v) {\< "&lt;" \> "&gt;" \& "&amp;" \" "&quot;" \' "&apos;"})))
+(defn make-notice [environment-name throwable {:keys [message-prefix context session params]}]
+  (generate-string
+   {:notifier {:name "clj-airbrake"
+               :version version
+               :url "http://github.com/leadtune/clj-airbrake"}
+    :errors [(make-error throwable)]
+    :context (merge {:os (get-operating-system)
+                     :language (str "Clojure-" (clojure-version))
+                     :environment environment-name}
+                    context)
+    :environment (System/getenv)
+    :session (or session {})
+    :params (or params {})}))
 
-(defn map?->str [v]
-  (if (map? v)
-    (prn-str v)
-    v))
-
-(defn- map->xml-vars [hash-map sub-map-key]
-  (when-let [sub-map (sub-map-key hash-map)]
-    (when-not (empty? sub-map)
-      (vec (cons sub-map-key
-                 (for [[k,v] sub-map]
-                   [:var {:key (sanitize k)} (-> v map?->str sanitize)]))))))
-
-(defn make-notice
-  ([api-key environment-name project-root throwable & [request message-prefix]]
-    (indent-str
-      (sexp-as-element
-             [:notice {:version "2.0"}
-              [:api-key api-key]
-              [:notifier
-               [:name "clj-airbrake"]
-               [:version version]
-               [:url "http://github.com/leadtune/clj-airbrake"]]
-              (xml-ex-response throwable message-prefix)
-              (when request
-                (when-not (:url request)
-                  (throw (IllegalArgumentException. ":url is required when passing in a request")))
-                [:request
-                 [:url (:url request)]
-                 [:component (sanitize (:component request))]
-                 [:action (sanitize (:action request))]
-                 (map->xml-vars request :cgi-data)
-                 (map->xml-vars request :params)
-                 (map->xml-vars request :session)])
-              [:server-environment
-               [:project-root (sanitize project-root)]
-               [:environment-name (sanitize environment-name)]]]))))
-
-(defn- parse-xml [xml-str]
-  (-> xml-str java.io.StringReader. org.xml.sax.InputSource. xml/parse zip/xml-zip))
-
-(defn- get-url [host] (str "http://" (or host @api-host) "/notifier_api/v2/notices"))
+(defn- get-url [project api-key]
+  (str "https://airbrake.io/api/v3/projects/" project "/notices?key=" api-key))
 
 (defn handle-response [response]
-  (let [body-xml (-> response :body parse-xml)
-        text-at (fn [key] (first (zf/xml-> body-xml key zf/text)))]
-    {:id (text-at :id)
-     :error-id (text-at :error-id)
-     :url (text-at :url)}))
+  (-> response :body (parse-string true)))
 
-(defn send-notice [notice & [host]]
-  (-> host
-      get-url
-      (client/post {:body notice :content-type :xml :accept :xml})
+(defn send-notice [notice project api-key]
+  (-> (get-url project api-key)
+      (client/post {:body notice :content-type :json :accept :json})
       handle-response))
 
-(defn send-notice-async [callback notice & [host]]
-  (httpclient/post (get-url host)
-                   {:body notice :content-type :xml :accept :xml}
+(defn send-notice-async [notice callback project api-key]
+  (httpclient/post (get-url project api-key)
+                   {:body notice :content-type :json :accept :json}
                    #(-> % handle-response callback)))
 
 (def ignored-environments (atom ["development" "test"]))
@@ -109,23 +64,31 @@
 (defn is-ignored-environment? [environment]
   (some #(= environment %) @ignored-environments))
 
-(defn ^:dynamic notify [& args]
-  (if (is-ignored-environment? (second args))
-    nil
-    (send-notice (apply make-notice args))))
+(defn validate-config [{:keys [environment-name api-key project]}]
+  (if (or (s/blank? environment-name)
+          (s/blank? api-key)
+          (s/blank? project))
+    (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
-(defn ^:dynamic notify-async [callback & args]
-  (if (is-ignored-environment? (second args))
+(defn ^:dynamic notify [{:keys [environment-name api-key project] :as airbrake-config} throwable extra-data]
+  (validate-config airbrake-config)
+  (if (is-ignored-environment? environment-name)
     nil
-    (send-notice-async callback (apply make-notice args))))
+    (-> (make-notice environment-name throwable extra-data)
+        (send-notice project api-key)) ))
 
-(defmacro with-airbrake [airbrake-config req & body]
+(defn ^:dynamic notify-async [callback {:keys [environment-name api-key project] :as airbrake-config} throwable extra-data]
+  (validate-config airbrake-config)
+  (if (is-ignored-environment? environment-name)
+    nil
+    (-> (make-notice environment-name throwable extra-data)
+        (send-notice-async callback  project api-key))))
+
+(defmacro with-airbrake [airbrake-config extra-data & body]
   `(try
     ~@body
     (catch Throwable t#
-      (notify (:api-key ~airbrake-config)
-              (:environment-name ~airbrake-config)
-              (:project-root ~airbrake-config)
+      (notify ~airbrake-config
               t#
-              ~req)
+              ~extra-data)
       (throw t#))))
