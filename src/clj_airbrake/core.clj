@@ -67,9 +67,9 @@
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
 (defn notify-async
-  ([callback airbrake-config throwable]
+  ([airbrake-config callback throwable]
    (notify-async callback airbrake-config throwable {}))
-  ([callback airbrake-config throwable extra-data]
+  ([airbrake-config callback throwable extra-data]
    (let [{:keys [environment-name api-key project ignored-environments]
           :or {ignored-environments #{"test" "development"}}}
          airbrake-config]
@@ -80,10 +80,15 @@
            (send-notice-async callback project api-key))))))
 
 (defn notify
+  ([airbrake-config]
+   (partial notify airbrake-config))
   ([airbrake-config throwable]
    (notify airbrake-config throwable {}))
   ([airbrake-config throwable extra-data]
-   @(notify-async identity airbrake-config throwable extra-data)))
+   @(notify-async airbrake-config identity throwable extra-data)))
+
+(defmacro def-notify [name airbrake-config]
+  `(def ~name (notify ~airbrake-config)))
 
 (defmacro with-airbrake [airbrake-config extra-data & body]
   `(try
