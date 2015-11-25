@@ -25,7 +25,7 @@
      (for [{:keys [file line], :as elem} trace-elems]
        {:line line :file file :method (method-str elem)})}))
 
-(defn make-notice [environment-name throwable {:keys [message-prefix context session params]}]
+(defn make-notice [throwable {:keys [message-prefix context session params environment-name root-directory]}]
   (generate-string
    {:notifier {:name "clj-airbrake"
                :version version
@@ -33,7 +33,8 @@
     :errors [(make-error throwable)]
     :context (merge {:os (get-operating-system)
                      :language (str "Clojure-" (clojure-version))
-                     :environment environment-name}
+                     :environment environment-name
+                     :rootDirectory root-directory}
                     context)
     :environment (System/getenv)
     :session (or session {})
@@ -64,13 +65,13 @@
   ([airbrake-config callback throwable]
    (notify-async callback airbrake-config throwable {}))
   ([airbrake-config callback throwable extra-data]
-   (let [{:keys [environment-name api-key project ignored-environments]
+   (let [{:keys [environment-name api-key project ignored-environments root-directory]
           :or {ignored-environments #{"test" "development"}}}
          airbrake-config]
      (validate-config airbrake-config)
      (if (is-ignored-environment? environment-name ignored-environments)
        (future nil)
-       (-> (make-notice environment-name throwable extra-data)
+       (-> (make-notice throwable (merge extra-data {:environment environment-name :root-directory root-directory}))
            (send-notice-async callback project api-key))))))
 
 (defn notify

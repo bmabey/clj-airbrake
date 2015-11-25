@@ -6,8 +6,11 @@
   (with-redefs [cheshire.core/generate-string identity]
     (let [notifier {:name "clj-airbrake"
                     :version version
-                    :url "http://github.com/leadtune/clj-airbrake"}]
-      (= notifier (:notifer (make-notice "" (Exception.) {}))))))
+                    :url "http://github.com/leadtune/clj-airbrake"}
+          notice (make-notice (Exception.) {:environemnt-name "env" :root-directory "/app/dir"})]
+      (= notifier (:notifer (make-notice (Exception.) {})))
+      (= "env" (:environment (:context notice)))
+      (= "/app/dir" (:rootDirectory (:context notice))))))
 
 (deftest test-make-error
   (let [e (Exception. "Something went wrong")]
