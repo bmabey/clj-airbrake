@@ -57,7 +57,8 @@
                    #(-> % handle-response callback)))
 
 (defn is-ignored-environment? [environment ignored-environments]
-  (get ignored-environments environment))
+  (if (coll? ignored-environments)
+    (get ignored-environments environment)))
 
 (defn validate-config [{:keys [environment-name api-key project]}]
   ;; Pull in Schema or another validation library?
@@ -66,26 +67,31 @@
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
-(defn notify [{:keys [environment-name api-key project ignored-environments]
-               :or   {ignored-environments #{"test" "development"}}
-               :as airbrake-config}
-              throwable extra-data]
-  (validate-config airbrake-config)
-  (if (is-ignored-environment? environment-name ignored-environments)
-    nil
-    (-> (make-notice environment-name throwable extra-data)
-        (send-notice project api-key))))
+(defn notify
+  ([airbrake-config throwable]
+   (notify airbrake-config throwable {}))
+  ([airbrake-config throwable extra-data]
+   (let [{:keys [environment-name api-key project ignored-environments]
+          :or   {ignored-environments #{"test" "development"}}}
+         airbrake-config]
+     (validate-config airbrake-config)
+     (if (is-ignored-environment? environment-name ignored-environments)
+       nil
+       (-> (make-notice environment-name throwable extra-data)
+           (send-notice project api-key))))))
 
-(defn notify-async [callback
-                    {:keys [environment-name api-key project ignored-environments]
-                     :or {ignored-environments #{"test" "development"}}
-                     :as airbrake-config}
-                    throwable extra-data]
-  (validate-config airbrake-config)
-  (if (is-ignored-environment? environment-name ignored-environments)
-    nil
-    (-> (make-notice environment-name throwable extra-data)
-        (send-notice-async callback  project api-key))))
+(defn notify-async
+  ([callback airbrake-config throwable]
+   (notify-async callback airbrake-config throwable {}))
+  ([callback airbrake-config throwable extra-data]
+   (let [{:keys [environment-name api-key project ignored-environments]
+          :or {ignored-environments #{"test" "development"}}}
+         airbrake-config]
+     (validate-config airbrake-config)
+     (if (is-ignored-environment? environment-name ignored-environments)
+       nil
+       (-> (make-notice environment-name throwable extra-data)
+           (send-notice-async callback project api-key))))))
 
 (defmacro with-airbrake [airbrake-config extra-data & body]
   `(try
