@@ -45,11 +45,6 @@
 (defn handle-response [response]
   (-> response :body (parse-string true)))
 
-(defn send-notice [notice project api-key]
-  (-> (get-url project api-key)
-      (client/post {:body notice :content-type :json :accept :json :throw-exceptions false})
-      handle-response))
-
 (defn send-notice-async [notice callback project api-key]
   (httpclient/post (get-url project api-key)
                    {:body notice :content-type :json :accept :json}
@@ -59,12 +54,13 @@
   (if (coll? ignored-environments)
     (get ignored-environments environment)))
 
-(defn validate-config [{:keys [environment-name api-key project]}]
+(defn validate-config [{:keys [environment-name api-key project] :as config}]
   ;; Pull in Schema or another validation library?
   (if (or (s/blank? environment-name)
           (s/blank? api-key)
           (s/blank? project))
-    (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
+    (do (println config)
+        (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'")))))
 
 (defn notify-async
   ([airbrake-config callback throwable]
@@ -75,7 +71,7 @@
          airbrake-config]
      (validate-config airbrake-config)
      (if (is-ignored-environment? environment-name ignored-environments)
-       nil
+       (future nil)
        (-> (make-notice environment-name throwable extra-data)
            (send-notice-async callback project api-key))))))
 
