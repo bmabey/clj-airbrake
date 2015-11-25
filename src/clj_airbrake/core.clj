@@ -56,11 +56,9 @@
 
 (defn validate-config [{:keys [environment-name api-key project] :as config}]
   ;; Pull in Schema or another validation library?
-  (if (or (s/blank? environment-name)
-          (s/blank? api-key)
+  (if (or (s/blank? api-key)
           (s/blank? project))
-    (do (println config)
-        (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'")))))
+    (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'api-key' and 'project'"))))
 
 (defn notify-async
   ([airbrake-config callback throwable]
