@@ -48,7 +48,7 @@
 
 (defn send-notice-async [notice callback project api-key]
   (httpclient/post (get-url project api-key)
-                   {:body notice :content-type :json :accept :json}
+                   {:body notice :headers {"Content-Type" "application/json"}}
                    #(-> % handle-response callback)))
 
 (defn is-ignored-environment? [environment ignored-environments]

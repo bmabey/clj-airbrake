@@ -144,7 +144,6 @@ Running the tests:
 ## TODO
 
  * Param filtering. (e.g. automatically filter out any 'password' params)
- * Configuartion management?  i.e. set api-key once
 
 ## License
 

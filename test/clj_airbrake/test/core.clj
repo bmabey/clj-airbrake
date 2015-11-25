@@ -26,5 +26,3 @@
 
       (notify {:api-key "api-key" :environment-name "production" :project "p"} (Exception.))
       (is (not (= nil @notice-args))))))
-
-
