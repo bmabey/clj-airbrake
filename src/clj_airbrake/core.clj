@@ -1,7 +1,6 @@
 (ns clj-airbrake.core
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
-  (:require [clj-http.lite.client :as client]
-            [org.httpkit.client :as httpclient]
+  (:require [org.httpkit.client :as httpclient]
             [clojure.java.io :as jio]
             [clojure.string :as s]
             [cheshire.core :refer :all]))
@@ -67,19 +66,6 @@
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
-(defn notify
-  ([airbrake-config throwable]
-   (notify airbrake-config throwable {}))
-  ([airbrake-config throwable extra-data]
-   (let [{:keys [environment-name api-key project ignored-environments]
-          :or   {ignored-environments #{"test" "development"}}}
-         airbrake-config]
-     (validate-config airbrake-config)
-     (if (is-ignored-environment? environment-name ignored-environments)
-       nil
-       (-> (make-notice environment-name throwable extra-data)
-           (send-notice project api-key))))))
-
 (defn notify-async
   ([callback airbrake-config throwable]
    (notify-async callback airbrake-config throwable {}))
@@ -92,6 +78,12 @@
        nil
        (-> (make-notice environment-name throwable extra-data)
            (send-notice-async callback project api-key))))))
+
+(defn notify
+  ([airbrake-config throwable]
+   (notify airbrake-config throwable {}))
+  ([airbrake-config throwable extra-data]
+   @(notify-async identity airbrake-config throwable extra-data)))
 
 (defmacro with-airbrake [airbrake-config extra-data & body]
   `(try
