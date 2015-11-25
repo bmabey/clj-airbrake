@@ -48,7 +48,7 @@
 
 (defn send-notice [notice project api-key]
   (-> (get-url project api-key)
-      (client/post {:body notice :content-type :json :accept :json})
+      (client/post {:body notice :content-type :json :accept :json :throw-exceptions false})
       handle-response))
 
 (defn send-notice-async [notice callback project api-key]
@@ -57,7 +57,7 @@
                    #(-> % handle-response callback)))
 
 (defn is-ignored-environment? [environment ignored-environments]
-  (some #(= environment %) ignored-environments))
+  (get ignored-environments environment))
 
 (defn validate-config [{:keys [environment-name api-key project]}]
   ;; Pull in Schema or another validation library?
@@ -66,14 +66,21 @@
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'environment-name', 'api-key', and 'project'"))))
 
-(defn ^:dynamic notify [{:keys [environment-name api-key project ignored-environments] :as airbrake-config} throwable extra-data]
+(defn notify [{:keys [environment-name api-key project ignored-environments]
+               :or   {ignored-environments #{"test" "development"}}
+               :as airbrake-config}
+              throwable extra-data]
   (validate-config airbrake-config)
   (if (is-ignored-environment? environment-name ignored-environments)
     nil
     (-> (make-notice environment-name throwable extra-data)
-        (send-notice project api-key)) ))
+        (send-notice project api-key))))
 
-(defn ^:dynamic notify-async [callback {:keys [environment-name api-key project ignored-environments] :as airbrake-config} throwable extra-data]
+(defn notify-async [callback
+                    {:keys [environment-name api-key project ignored-environments]
+                     :or {ignored-environments #{"test" "development"}}
+                     :as airbrake-config}
+                    throwable extra-data]
   (validate-config airbrake-config)
   (if (is-ignored-environment? environment-name ignored-environments)
     nil
