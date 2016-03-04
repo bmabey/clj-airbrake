@@ -7,57 +7,112 @@ Clojure client for the [Airbrake API](http://www.airbrakeapp.com/pages/home)
 ```clojure
 (require '[clj-airbrake.core :as airbrake])
 
-(def request {:url "http://example.com" :component "foo" :action "bar"
-             :cgi-data {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}
-             :params {"city" "LA", "state" "CA"}
-             :session {"user-id" "23"}})
+(def airbrake-config ..)
+
+(def request {:context {:url "http://example.com"
+                        :component "foo"
+                        :action "bar"
+                        :headers {"SERVER_NAME" "nginx", "HTTP_USER_AGENT" "Mozilla"}}
+              :params {"city" "LA", "state" "CA"}
+              :session {"user-id" "23"}})
 
 (def exception (try (throw (Exception. "Foo")) (catch Exception e e)) ; throw to get a stacktrace
 
-;; send in blocking style using the JDK's http libs
-(airbrake/notify "my-api-key" "production" "/app/dir" exception request)
+;; blocking notify
+(airbrake/notify airbrake-configuration exception request)
 => {:error-id 42 :id 100 :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
 
+;; async notify
+(airbrake/notify-async airbrake-configuration (fn [resp] ...) exception request)
 
-;; send async using http-kit and callbacks
-(airbrake/notify-async (fn [resp] ...) "my-api-key" "production" "/app/dir" exception request)
-
-;; the notify and notify-async fns are also dynamic vars if you wish to swap them out for
-;; a different implementation using the same XML request helpers in clj-airbrake.core
- ```
-
-Note that the `request` is one-to-one with Airbrake's API and *not* a [Ring][ring] request.  If you are using ring please <a href="#middleware">see below</a> about the provided ring middleware.
-
-The `request` is optional but is the only way the Airbrake API allows you to pass in additonal information.
-So, if you are using the client out of the context of a web application you can use the request to send in
-enviromental variables or anything else that may help in
-troubleshooting.  Note, that `url` in the request is required if you
-do provide a `request` hashmap.
-
-### Additional Configuration
-
-If you need to change the host name where the errors are sent you you
-can use the `#'set-host!` function:
-
-```clojure
-(require '[clj-airbrake.core :as airbrake])
-
-(airbrake/set-host! "api.airbrake.io")
-
+;; wrapper shorthand
+(airbrake/with-airbrake airbrake-configuration
+                        request
+                        ;; your code goes here
+                        )
 ```
 
-### Ignoring Environments
+## Airbrake configuration
 
-If you want particular environments to not send notices to airbrake you can call the following:
+Below is an example of the `airbrake-configuration`:
 
 ```clojure
-(require '[clj-airbrake.core :as airbrake])
+{
+ :api-key "API_KEY"        ;required
+ :project "PROJECT_ID"     ;required
+ :environment-name "env"   ;optional
+ :root-dirctory "/app/dir" ;optional
 
-(airbrake/ignore-environment! "my-local-environment")
+ :ignored-environments #{"test" "development"} ;optional but defaults to 'development' and 'test'
+ }
+```
+Both `api-key` and `project` can both be found in the settings for your project in the Airbrake website.
+
+Unsurprisingly, passing the configuration to `notify` for every single call could be painful. So a convinience macro is provided.
+
+```clojure
+(def airbrake-config {:api-key "api-key" :project "project"})
+
+(def-notify my-notify airbrake-config)
+
+(my-notify (Exception. "Something went wrong."))
 ```
 
-By default `test` and `development` are ignored.
+Notify is also overloaded so if you just pass the airbrake configuration it will return a function that can be used to send a notification.
 
+
+## Request
+
+Optionally you can pass a 3rd parameter to `notify` and 4th parameter to `notify-async`
+
+This parameter must be a map and will look for three keys in this map: `session`, `params`, and `context`
+
+`session` and `params` are expected to be maps with any keys.
+
+### Context
+Context can contain the following keys:
+```clojure
+{
+ :environment ""   ; will default to `environment-name` from configuration
+ :rootDirectory "" ; will default to `root-directory` from configuration
+ :os ""            ; will look up operating system
+ :language ""      ; will default to "Clojure-1.7.0" (or whichever version of Clojure you're running)
+ :component ""
+ :action ""
+ :version ""
+ :url ""
+ :userAgent ""
+ :userId ""
+ :userUsername ""
+ :userName ""
+ :userEmail ""
+}
+```
+
+More information about what can be passed to Airbrake can be found in the Airbrake documentation - https://airbrake.io/docs/#create-notice-v3
+
+## Ring Middleware
+<a name="middleware" />
+
+Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request parameters and session information are passed to Airbrake. A simple ring example:
+
+```clojure
+(use 'ring.adapter.jetty)
+(use 'ring.middleware.params)
+(use 'ring.middleware.stacktrace)
+(use 'clj-airbrake.ring)
+
+(defn app [req]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :body    (throw (Exception. "Testing"))})
+
+(run-jetty (-> app
+               (wrap-params)
+               (wrap-airbrake airbrake-configuration)
+               (wrap-stacktrace))
+           {:port 8080})
+```
 
 ## Installation
 
@@ -85,53 +140,10 @@ Running the tests:
     $ lein deps
     $ lein test
 
-## Ring Middleware
-<a name="middleware" />
-
-Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request parameters and session information are passed to Airbrake. A simple ring example:
-
-```clojure
-(use 'ring.adapter.jetty)
-(use 'ring.middleware.params)
-(use 'ring.middleware.stacktrace)
-(use 'clj-airbrake.ring)
-
-(defn app [req]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (throw (Exception. "Testing"))})
-
-(run-jetty (-> app
-               (wrap-params)
-               (wrap-airbrake "MY-API-KEY")
-               (wrap-stacktrace))
-           {:port 8080})
-```
-
-## Wrapper shorthand
-
-A typical application of Airbrake is recording any errors that happen in a script.
-You can do this with the `with-airbrake` wrapper. It will pass through exceptions happening inside and notify Airbrake.
-
-
-```clojure
-(use 'clj-airbrake.core')
-
-(defn -main
-  [& args]
-  (with-airbrake "MY-API-KEY"
-                 "production"
-                 (System/getProperty "user.dir")
-                 {:component "scripts", :action "my-script"}
-                 ;; your code goes here
-                 ))
-
-```
 
 ## TODO
 
  * Param filtering. (e.g. automatically filter out any 'password' params)
- * Configuartion management?  i.e. set api-key once
 
 ## License
 
