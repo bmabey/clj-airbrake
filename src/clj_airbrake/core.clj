@@ -29,7 +29,7 @@
   (generate-string
    {:notifier {:name "clj-airbrake"
                :version version
-               :url "http://github.com/leadtune/clj-airbrake"}
+               :url "http://github.com/bmabey/clj-airbrake"}
     :errors [(make-error throwable)]
     :context (merge {:os (get-operating-system)
                      :language (str "Clojure-" (clojure-version))
