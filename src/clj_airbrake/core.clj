@@ -20,7 +20,7 @@
   (let [{:keys [trace-elems]} (parse-exception throwable)
         message (str throwable)]
     {:type (str throwable)
-     :message message
+     :message (.getMessage throwable)
      :backtrace
      (for [{:keys [file line], :as elem} trace-elems]
        {:line line :file file :function (method-str elem)})}))
