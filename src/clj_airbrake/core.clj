@@ -17,9 +17,8 @@
 (def version (get-version))
 
 (defn make-error [throwable]
-  (let [{:keys [trace-elems]} (parse-exception throwable)
-        message (str throwable)]
-    {:type (str throwable)
+  (let [{:keys [trace-elems]} (parse-exception throwable)]
+    {:type (str (type throwable))
      :message (.getMessage throwable)
      :backtrace
      (for [{:keys [file line], :as elem} trace-elems]
