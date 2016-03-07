@@ -17,13 +17,12 @@
 (def version (get-version))
 
 (defn make-error [throwable]
-  (let [{:keys [trace-elems]} (parse-exception throwable)
-        message (str throwable)]
-    {:type (str throwable)
-     :message message
+  (let [{:keys [trace-elems]} (parse-exception throwable)]
+    {:type (str (type throwable))
+     :message (.getMessage throwable)
      :backtrace
      (for [{:keys [file line], :as elem} trace-elems]
-       {:line line :file file :method (method-str elem)})}))
+       {:line line :file file :function (method-str elem)})}))
 
 (defn make-notice [throwable {:keys [message-prefix context session params environment-name root-directory]}]
   (generate-string
