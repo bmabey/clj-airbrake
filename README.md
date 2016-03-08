@@ -118,18 +118,20 @@ Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request
 
 `clj-airbrake` is available as a Maven artifact [Clojars](http://clojars.org/clj-airbrake).
 
+[![Clojars Project](https://img.shields.io/clojars/v/clj-airbrake.svg)](https://clojars.org/clj-airbrake)
+
 Leiningen:
 
 ```clojure
 :dependencies
-  [[clj-airbrake "2.4.3"] ...]
+  [[clj-airbrake "3.0.2"] ...]
 ```
 Maven:
 
     <dependency>
       <groupId>clj-airbrake</groupId>
       <artifactId>clj-airbrake</artifactId>
-      <version>2.4.3</version>
+      <version>3.0.2</version>
     </dependency>
 
 
