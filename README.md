@@ -1,5 +1,7 @@
 # clj-airbrake
 
+[![Clojars Project](https://img.shields.io/clojars/v/clj-airbrake.svg)](https://clojars.org/clj-airbrake)
+
 Clojure client for the [Airbrake API](http://www.airbrakeapp.com/pages/home)
 
 ## Usage
@@ -118,7 +120,6 @@ Basic support for Ring is provided in the `clj-airbrake.ring` namespace: request
 
 `clj-airbrake` is available as a Maven artifact [Clojars](http://clojars.org/clj-airbrake).
 
-[![Clojars Project](https://img.shields.io/clojars/v/clj-airbrake.svg)](https://clojars.org/clj-airbrake)
 
 Leiningen:
 
