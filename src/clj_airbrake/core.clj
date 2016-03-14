@@ -16,10 +16,10 @@
 
 (def version (get-version))
 
-(defn make-error [throwable]
+(defn make-error [message-prefix throwable]
   (let [{:keys [trace-elems]} (parse-exception throwable)]
     {:type (.getName (type throwable))
-     :message (.getMessage throwable)
+     :message (str message-prefix (.getMessage throwable))
      :backtrace
      (for [{:keys [file line], :as elem} trace-elems]
        {:line line :file file :function (method-str elem)})}))
@@ -29,7 +29,7 @@
    {:notifier {:name "clj-airbrake"
                :version version
                :url "http://github.com/bmabey/clj-airbrake"}
-    :errors [(make-error throwable)]
+    :errors [(make-error message-prefix throwable)]
     :context (merge {:os (get-operating-system)
                      :language (str "Clojure-" (clojure-version))
                      :environment environment-name
