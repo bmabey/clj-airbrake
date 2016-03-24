@@ -70,7 +70,7 @@
      (validate-config airbrake-config)
      (if (is-ignored-environment? environment-name ignored-environments)
        (future nil)
-       (-> (make-notice throwable (merge extra-data {:environment environment-name :root-directory root-directory}))
+       (-> (make-notice throwable (merge extra-data {:environment-name environment-name :root-directory root-directory}))
            (send-notice-async callback project api-key))))))
 
 (defn notify
