@@ -1,6 +1,6 @@
 (ns clj-airbrake.core
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
-  (:require [org.httpkit.client :as httpclient]
+  (:require [clj-http.lite.client :as httpclient]
             [clojure.java.io :as jio]
             [clojure.string :as s]
             [cheshire.core :refer :all]))
@@ -45,10 +45,9 @@
 (defn handle-response [response]
   (-> response :body (parse-string true)))
 
-(defn send-notice-async [notice callback project api-key]
+(defn send-notice [notice project api-key]
   (httpclient/post (get-url project api-key)
-                   {:body notice :headers {"Content-Type" "application/json"}}
-                   #(-> % handle-response callback)))
+                   {:body notice :headers {"Content-Type" "application/json"}}))
 
 (defn is-ignored-environment? [environment ignored-environments]
   (if (coll? ignored-environments)
@@ -60,26 +59,27 @@
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'api-key' and 'project'"))))
 
-(defn notify-async
-  ([airbrake-config callback throwable]
-   (notify-async callback airbrake-config throwable {}))
-  ([airbrake-config callback throwable extra-data]
-   (let [{:keys [environment-name api-key project ignored-environments root-directory]
-          :or {ignored-environments #{"test" "development"}}}
-         airbrake-config]
-     (validate-config airbrake-config)
-     (if (is-ignored-environment? environment-name ignored-environments)
-       (future nil)
-       (-> (make-notice throwable (merge extra-data {:environment-name environment-name :root-directory root-directory}))
-           (send-notice-async callback project api-key))))))
-
 (defn notify
   ([airbrake-config]
    (partial notify airbrake-config))
   ([airbrake-config throwable]
    (notify airbrake-config throwable {}))
   ([airbrake-config throwable extra-data]
-   @(notify-async airbrake-config identity throwable extra-data)))
+   (let [{:keys [environment-name api-key project ignored-environments root-directory]
+          :or {ignored-environments #{"test" "development"}}}
+         airbrake-config]
+     (validate-config airbrake-config)
+     (if (is-ignored-environment? environment-name ignored-environments)
+       nil
+       (-> (make-notice throwable (merge extra-data {:environment-name environment-name :root-directory root-directory}))
+           (send-notice project api-key))))))
+
+(defn notify-async
+  {:deprecated "3.1.0"}
+  ([airbrake-config throwable]
+   (notify-async airbrake-config throwable {}))
+  ([airbrake-config throwable extra-data]
+   (future (notify airbrake-config throwable extra-data))))
 
 (defmacro def-notify [name airbrake-config]
   `(def ~name (notify ~airbrake-config)))
