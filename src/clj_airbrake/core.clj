@@ -3,7 +3,9 @@
   (:require [org.httpkit.client :as httpclient]
             [clojure.java.io :as jio]
             [clojure.string :as s]
-            [cheshire.core :refer :all]))
+            [cheshire.core :refer :all])
+  (:import [java.util.concurrent ThreadPoolExecutor LinkedBlockingQueue TimeUnit]
+           [org.httpkit PrefixThreadFactory]))
 
 (defn get-version []
   (or (System/getProperty "clj-airbrake.version")
@@ -45,9 +47,17 @@
 (defn handle-response [response]
   (-> response :body (parse-string true)))
 
+(def thread-pool
+  (let [max (.availableProcessors (Runtime/getRuntime))
+        queue (LinkedBlockingQueue.)
+        factory (PrefixThreadFactory. "airbrake-worker-")]
+    (ThreadPoolExecutor. max max 60 TimeUnit/SECONDS queue factory)))
+
 (defn send-notice-async [notice callback project api-key]
   (httpclient/post (get-url project api-key)
-                   {:body notice :headers {"Content-Type" "application/json"}}
+                   {:body notice
+                    :headers {"Content-Type" "application/json"}
+                    :worker-pool thread-pool}
                    #(-> % handle-response callback)))
 
 (defn is-ignored-environment? [environment ignored-environments]
