@@ -34,6 +34,8 @@ Clojure client for the [Airbrake API](http://www.airbrakeapp.com/pages/home)
                         )
 ```
 
+Note: `notify` and `notify-async` use http-kit to send the notice. To avoid possible deadlocks with other requests when sending the notice (see issue #30), we create our own threadpool for http-kit to use rather than using the default threadpool.
+
 ## Airbrake configuration
 
 Below is an example of the `airbrake-configuration`:
