@@ -22,16 +22,18 @@ Clojure client for the [Airbrake API](http://www.airbrakeapp.com/pages/home)
 
 ;; blocking notify
 (airbrake/notify airbrake-configuration exception request)
-=> {:error-id 42 :id 100 :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
-
-;; async notify
-(airbrake/notify-async airbrake-configuration (fn [resp] ...) exception request)
+;=> {:error-id 42 :id 100 :url "http://sub.airbrakeapp.com/errors/42/notices/100"}
 
 ;; wrapper shorthand
 (airbrake/with-airbrake airbrake-configuration
                         request
                         ;; your code goes here
                         )
+
+;; DEPRICATED
+;; async notify - returns a future
+(airbrake/notify-async airbrake-configuration exception request)
+;=> #object[clojure.core$future_call$reify__6736 0xbafd7ed {:status :pending, :val nil}]
 ```
 
 ## Airbrake configuration
@@ -65,7 +67,7 @@ Notify is also overloaded so if you just pass the airbrake configuration it will
 
 ## Request
 
-Optionally you can pass a 3rd parameter to `notify` and 4th parameter to `notify-async`
+Optionally you can pass a 3rd parameter to `notify` and `notify-async`
 
 This parameter must be a map and will look for three keys in this map: `session`, `params`, and `context`
 
