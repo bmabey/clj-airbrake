@@ -26,19 +26,21 @@
      (for [{:keys [file line], :as elem} trace-elems]
        {:line line :file file :function (method-str elem)})}))
 
-(defn remove-key? [k regexes]
-  (some true? (map #(boolean (re-matches % k)) regexes)))
+(defn sensitive? [preds [k _]]
+  ((apply some-fn preds) k))
+
+(defn scrub [regexes m]
+  (let [preds (map #(partial re-matches %)  regexes)]
+    (->> m
+         (remove (partial sensitive? preds))
+         (into {}))))
 
 (defn get-environment-variables [sensitive-environment-variables]
-  (->> (System/getenv)
-       (remove (fn [[k _]] (remove-key? k sensitive-environment-variables)))
-       (into {})))
+  (scrub sensitive-environment-variables (System/getenv)))
 
 (defn remove-sensitive-params [params sensitive-params]
   (if params
-    (->> params
-         (remove (fn [[k _]] (remove-key? k sensitive-params)))
-         (into {}))
+    (scrub sensitive-params params)
     {}))
 
 (defn make-notice [throwable {:keys [message-prefix context session params environment-name root-directory]} sensitive-environment-variables sensitive-params]
