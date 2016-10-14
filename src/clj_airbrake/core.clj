@@ -89,8 +89,8 @@
 
 (def defaults
   {:ignored-environments #{"test" "development"}
-   :sensitive-environment-variables [#"PASSWORD"]
-   :sensitive-params [#"password"]})
+   :sensitive-environment-variables [#"(?i)PASS" #"(?i)SECRET" #"(?i)TOKEN" #"(?i)AWS_ACCESS_KEY_ID" #"(?i)AWS_SECRET_ACCESS_KEY"]
+   :sensitive-params [#"(?i)pass"]})
 
 (defn notify-async
   ([airbrake-config callback throwable]
