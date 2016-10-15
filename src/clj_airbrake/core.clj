@@ -29,8 +29,11 @@
 (defn sensitive? [preds [k _]]
   ((apply some-fn preds) k))
 
+(defn matches? [r k]
+  (re-find r (name k)))
+
 (defn scrub [regexes m]
-  (let [preds (map #(partial re-matches %)  regexes)]
+  (let [preds (map #(partial matches? %) regexes)]
     (->> m
          (remove (partial sensitive? preds))
          (into {}))))
