@@ -1,4 +1,4 @@
-(ns clj-airbrake.core
+ (ns clj-airbrake.core
   (:use (clj-stacktrace [core :only [parse-exception]] [repl :only [method-str]]))
   (:require [org.httpkit.client :as httpclient]
             [clojure.java.io :as jio]
@@ -26,7 +26,27 @@
      (for [{:keys [file line], :as elem} trace-elems]
        {:line line :file file :function (method-str elem)})}))
 
-(defn make-notice [throwable {:keys [message-prefix context session params environment-name root-directory]}]
+(defn sensitive? [preds [k _]]
+  ((apply some-fn preds) k))
+
+(defn matches? [r k]
+  (re-find r (name k)))
+
+(defn scrub [regexes m]
+  (let [preds (map #(partial matches? %) regexes)]
+    (->> m
+         (remove (partial sensitive? preds))
+         (into {}))))
+
+(defn get-environment-variables [sensitive-environment-variables]
+  (scrub sensitive-environment-variables (System/getenv)))
+
+(defn remove-sensitive-params [params sensitive-params]
+  (if params
+    (scrub sensitive-params params)
+    {}))
+
+(defn make-notice [throwable {:keys [message-prefix context session params environment-name root-directory]} sensitive-environment-variables sensitive-params]
   (generate-string
    {:notifier {:name "clj-airbrake"
                :version version
@@ -37,9 +57,9 @@
                      :environment environment-name
                      :rootDirectory root-directory}
                     context)
-    :environment (System/getenv)
+    :environment (get-environment-variables sensitive-environment-variables)
     :session (or session {})
-    :params (or params {})}))
+    :params (remove-sensitive-params params sensitive-params)}))
 
 (defn- get-url [project api-key]
   (str "https://airbrake.io/api/v3/projects/" project "/notices?key=" api-key))
@@ -70,17 +90,21 @@
           (s/blank? project))
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'api-key' and 'project'"))))
 
+(def defaults
+  {:ignored-environments #{"test" "development"}
+   :sensitive-environment-variables [#"(?i)PASS" #"(?i)SECRET" #"(?i)TOKEN" #"(?i)AWS_ACCESS_KEY_ID" #"(?i)AWS_SECRET_ACCESS_KEY"]
+   :sensitive-params [#"(?i)pass"]})
+
 (defn notify-async
   ([airbrake-config callback throwable]
    (notify-async callback airbrake-config throwable {}))
   ([airbrake-config callback throwable extra-data]
-   (let [{:keys [environment-name api-key project ignored-environments root-directory]
-          :or {ignored-environments #{"test" "development"}}}
-         airbrake-config]
+   (let [{:keys [environment-name api-key project ignored-environments root-directory sensitive-environment-variables sensitive-params]} (merge defaults airbrake-config)
+         notice-data (merge extra-data {:environment-name environment-name :root-directory root-directory})]
      (validate-config airbrake-config)
      (if (is-ignored-environment? environment-name ignored-environments)
        (future nil)
-       (-> (make-notice throwable (merge extra-data {:environment-name environment-name :root-directory root-directory}))
+       (-> (make-notice throwable notice-data sensitive-environment-variables sensitive-params)
            (send-notice-async callback project api-key))))))
 
 (defn notify
@@ -98,6 +122,7 @@
   `(try
     ~@body
     (catch Throwable t#
+      ;; should we log here?
       (notify ~airbrake-config
               t#
               ~extra-data)

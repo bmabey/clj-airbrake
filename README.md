@@ -48,9 +48,17 @@ Below is an example of the `airbrake-configuration`:
  :root-dirctory "/app/dir" ;optional
 
  :ignored-environments #{"test" "development"} ;optional but defaults to 'development' and 'test'
+ :sensitive-environment-variables [#"pass"] ;optional
+ :sensitive-params [#"pass"] ;optional
  }
 ```
 Both `api-key` and `project` can both be found in the settings for your project in the Airbrake website.
+
+### Senstive data
+
+There are times that your environment and params may contain sensitive data (e.g. passwords) that you don't want sent to airbrake. We try to provide sensible defaults for this but can be configured throught the keys `sensitive-environment-variables` and `sensitive-params`. Both values are a vector of regexes that will be tested against the keys in your environment variable and params.
+
+### Currying
 
 Unsurprisingly, passing the configuration to `notify` for every single call could be painful. So a convinience macro is provided.
 
