@@ -44,6 +44,7 @@ Below is an example of the `airbrake-configuration`:
 {
  :api-key "API_KEY"        ;required
  :project "PROJECT_ID"     ;required
+ :host                     ;optional
  :environment-name "env"   ;optional
  :root-dirctory "/app/dir" ;optional
 
