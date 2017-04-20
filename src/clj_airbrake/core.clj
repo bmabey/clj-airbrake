@@ -61,8 +61,8 @@
     :session (or session {})
     :params (remove-sensitive-params params sensitive-params)}))
 
-(defn- get-url [project api-key]
-  (str "https://airbrake.io/api/v3/projects/" project "/notices?key=" api-key))
+(defn- get-url [host project api-key]
+  (str "https://" host "/api/v3/projects/" project "/notices?key=" api-key))
 
 (defn handle-response [response]
   (-> response :body (parse-string true)))
@@ -73,8 +73,8 @@
         factory (PrefixThreadFactory. "airbrake-worker-")]
     (ThreadPoolExecutor. max max 60 TimeUnit/SECONDS queue factory)))
 
-(defn send-notice-async [notice callback project api-key]
-  (httpclient/post (get-url project api-key)
+(defn send-notice-async [notice callback host project api-key]
+  (httpclient/post (get-url host project api-key)
                    {:body notice
                     :headers {"Content-Type" "application/json"}
                     :worker-pool thread-pool}
@@ -91,7 +91,8 @@
     (throw (IllegalArgumentException. "Airbrake configuration must contain non-empty 'api-key' and 'project'"))))
 
 (def defaults
-  {:ignored-environments #{"test" "development"}
+  {:host "airbrake.io"
+   :ignored-environments #{"test" "development"}
    :sensitive-environment-variables [#"(?i)PASS" #"(?i)SECRET" #"(?i)TOKEN" #"(?i)AWS_ACCESS_KEY_ID" #"(?i)AWS_SECRET_ACCESS_KEY"]
    :sensitive-params [#"(?i)pass"]})
 
@@ -99,13 +100,13 @@
   ([airbrake-config callback throwable]
    (notify-async callback airbrake-config throwable {}))
   ([airbrake-config callback throwable extra-data]
-   (let [{:keys [environment-name api-key project ignored-environments root-directory sensitive-environment-variables sensitive-params]} (merge defaults airbrake-config)
+   (let [{:keys [environment-name api-key project host ignored-environments root-directory sensitive-environment-variables sensitive-params]} (merge defaults airbrake-config)
          notice-data (merge extra-data {:environment-name environment-name :root-directory root-directory})]
      (validate-config airbrake-config)
      (if (is-ignored-environment? environment-name ignored-environments)
        (future nil)
        (-> (make-notice throwable notice-data sensitive-environment-variables sensitive-params)
-           (send-notice-async callback project api-key))))))
+           (send-notice-async callback host project api-key))))))
 
 (defn notify
   ([airbrake-config]
