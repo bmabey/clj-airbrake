@@ -98,7 +98,7 @@
 
 (defn notify-async
   ([airbrake-config callback throwable]
-   (notify-async callback airbrake-config throwable {}))
+   (notify-async airbrake-config callback throwable {}))
   ([airbrake-config callback throwable extra-data]
    (let [{:keys [environment-name api-key project host ignored-environments root-directory sensitive-environment-variables sensitive-params]} (merge defaults airbrake-config)
          notice-data (merge extra-data {:environment-name environment-name :root-directory root-directory})]
